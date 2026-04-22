@@ -136,7 +136,7 @@ def bulk_insert_clean_records(
     source_urls = [value for value in cleaned["source_url"].dropna().tolist() if value]
     contents = cleaned["content"].tolist()
 
-    query = select(RawText.source, RawText.source_url, RawText.content)
+    query = select(RawText.id, RawText.source, RawText.topic_label, RawText.source_url, RawText.content)
     conditions = []
     if source_urls:
         conditions.append(RawText.source_url.in_(source_urls))
@@ -146,12 +146,12 @@ def bulk_insert_clean_records(
         query = query.where(or_(*conditions))
 
     existing_rows = session.execute(query).all() if conditions else []
-    existing_keys = {
+    existing_rows_by_key = {
         (
             row.source,
             row.source_url or None,
             row.content,
-        )
+        ): row
         for row in existing_rows
     }
 
@@ -159,23 +159,29 @@ def bulk_insert_clean_records(
     skipped_count = 0
     for row in cleaned.to_dict(orient="records"):
         key = (row["source"], row["source_url"] or None, row["content"])
-        if key in existing_keys:
+        existing_row = existing_rows_by_key.get(key)
+        if existing_row is not None:
+            if not existing_row.topic_label and row["topic_label"]:
+                session.query(RawText).filter(RawText.id == existing_row.id).update(
+                    {"topic_label": row["topic_label"]},
+                    synchronize_session=False,
+                )
             skipped_count += 1
             continue
 
         payloads.append(
             {
                 "source": row["source"],
+                "topic_label": row["topic_label"],
                 "content": row["content"],
                 "source_url": row["source_url"] or None,
                 "published_at": row["published_at"],
             }
         )
-        existing_keys.add(key)
-
+        existing_rows_by_key[key] = row
     if payloads:
         session.bulk_insert_mappings(RawText, payloads)
-        session.commit()
+    session.commit()
 
     return len(payloads), skipped_count
 

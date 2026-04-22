@@ -13,6 +13,7 @@ class RawText(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     source: Mapped[str] = mapped_column(String(100), index=True)
+    topic_label: Mapped[str | None] = mapped_column(String(150), nullable=True, index=True)
     content: Mapped[str] = mapped_column(Text)
     source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

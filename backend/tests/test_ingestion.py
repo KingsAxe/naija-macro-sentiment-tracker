@@ -33,3 +33,4 @@ def test_prepare_clean_records_uses_manual_x_dataset() -> None:
     assert set(["source", "topic_label", "content", "published_at", "source_url"]).issubset(
         cleaned.columns
     )
+    assert cleaned["topic_label"].notna().all()

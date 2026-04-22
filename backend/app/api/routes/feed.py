@@ -15,6 +15,7 @@ def get_feed(session: DbSession) -> FeedResponse:
         select(
             RawText.id,
             RawText.source,
+            RawText.topic_label,
             RawText.content,
             RawText.published_at,
             AnalyzedSentiment.overall_sentiment,
@@ -28,6 +29,7 @@ def get_feed(session: DbSession) -> FeedResponse:
         FeedItem(
             id=row.id,
             source=row.source,
+            topic_label=row.topic_label,
             content=row.content,
             published_at=row.published_at,
             overall_sentiment=row.overall_sentiment,

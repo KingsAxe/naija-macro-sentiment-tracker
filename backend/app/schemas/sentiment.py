@@ -21,6 +21,7 @@ class TargetSentiment(BaseModel):
 class FeedItem(BaseModel):
     id: int
     source: str
+    topic_label: str | None
     content: str
     published_at: datetime | None
     overall_sentiment: str | None
