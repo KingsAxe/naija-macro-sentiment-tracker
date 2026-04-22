@@ -50,7 +50,7 @@ Week 2 is complete. Local PostgreSQL is now configured as the active database ta
 
 ## Current Project State
 
-The project is currently positioned at the end of Week 2.
+The project is currently positioned in **Week 3**, with the file-based ingestion baseline now implemented for the manually collected X dataset.
 
 What exists now:
 - planning and milestone documentation
@@ -58,6 +58,8 @@ What exists now:
 - SQLAlchemy domain models
 - Alembic migration baseline
 - local PostgreSQL schema applied
+- notebook-based cleaning and EDA audit trail for the manual X dataset
+- file-based ETL runner for CSV and XLSX ingestion
 - starter API routes for:
   - `/api/health`
   - `/api/sentiment/summary`
@@ -65,10 +67,10 @@ What exists now:
   - `/api/feed`
   - `/api/ingest/trigger`
 - frontend dashboard shell
-- sample CSV ingestion path that writes `RawText` rows
+- production Pandas cleaning pipeline that writes `RawText` rows
+- manual X dataset already ingested into PostgreSQL for verification
 
 What is intentionally not started yet:
-- Week 3 manual X dataset ingestion workflow beyond the sample CSV placeholder
 - Azure AI sentiment and opinion mining integration
 - Vanguard and Punch scraping
 - scheduler integration
@@ -76,10 +78,15 @@ What is intentionally not started yet:
 
 ## Next Planned Phase
 
-The next planned phase is **Week 3: File-Based ETL Pipeline**, but it is intentionally paused until manual X data collection is ready.
+The active planned phase is **Week 3: File-Based ETL Pipeline**.
 
-When Week 3 resumes, the immediate work should be:
-- define the final CSV/XLSX schema for manually collected X data
-- extend ingestion from the sample CSV to the real file format
-- normalize imported records into the shared ingestion structure
-- persist file-based ingestion cleanly through the ETL path before Azure AI integration begins
+Completed Week 3 baseline work:
+- accepted the manual X CSV schema
+- added cleaning logic in a notebook and mirrored it in production code
+- added an ETL runner with logging
+- loaded the manual X dataset into PostgreSQL
+
+Remaining Week 3 work:
+- tighten the ingestion contract and any schema documentation needed for repeat imports
+- verify the pipeline with future CSV or XLSX refreshes from your manual collection flow
+- decide whether any extra ingestion metadata should be stored before Azure AI integration begins

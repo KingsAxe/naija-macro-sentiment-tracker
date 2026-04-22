@@ -8,9 +8,14 @@ FastAPI application, SQLAlchemy models, and ETL services for the Naija Sentiment
 uvicorn app.main:app --reload
 ```
 
+## Run The File-Based ETL
+
+```powershell
+..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv
+```
+
 ## Planned Next Steps
 
 - add Alembic migrations
-- implement CSV ingestion service
 - integrate Azure AI Language sentiment analysis
 - add PostgreSQL-specific local configuration

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.api.deps import get_db_session
 from app.db.base import Base
 from app.main import app
+from app.services.ingestion import prepare_clean_records
 
 
 def build_test_client(tmp_path: Path) -> TestClient:
@@ -55,19 +56,20 @@ def test_healthcheck_and_frontdoor_routes(tmp_path: Path) -> None:
 def test_manual_ingestion_writes_raw_text_records(tmp_path: Path) -> None:
     client = build_test_client(tmp_path)
     engine = client._test_engine  # type: ignore[attr-defined]
+    cleaned, _ = prepare_clean_records("data/raw_macro_data.csv")
 
     response = client.post("/api/ingest/trigger")
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "completed"
-    assert payload["ingested_count"] == 4
+    assert payload["ingested_count"] == len(cleaned)
     assert payload["skipped_count"] == 0
 
     with Session(engine) as session:
         row_count = session.execute(text("select count(*) from raw_texts")).scalar_one()
 
-    assert row_count == 4
+    assert row_count == len(cleaned)
 
 
 def test_schema_metadata_matches_initial_tables(tmp_path: Path) -> None:
