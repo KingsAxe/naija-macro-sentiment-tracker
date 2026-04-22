@@ -86,7 +86,11 @@ Completed Week 3 baseline work:
 - added an ETL runner with logging
 - loaded the manual X dataset into PostgreSQL
 
-Remaining Week 3 work:
-- tighten the ingestion contract and any schema documentation needed for repeat imports
-- verify the pipeline with future CSV or XLSX refreshes from your manual collection flow
+Completed Week 3 hardening work:
+- finalized the manual X file contract in a short repository document
+- added helper validation so future imports fail clearly if the file shape drifts
+- preserved `topic_label` in the database and feed pipeline
+
+Next likely work:
 - decide whether any extra ingestion metadata should be stored before Azure AI integration begins
+- move into Week 4 Azure AI sentiment and opinion-mining integration
