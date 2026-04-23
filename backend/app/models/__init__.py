@@ -1,3 +1,3 @@
-from app.models.sentiment import AnalyzedSentiment, OpinionTarget, RawText
+from app.models.sentiment import AnalyzedSentiment, OpinionAssessment, OpinionTarget, RawText
 
-__all__ = ["AnalyzedSentiment", "OpinionTarget", "RawText"]
+__all__ = ["AnalyzedSentiment", "OpinionAssessment", "OpinionTarget", "RawText"]

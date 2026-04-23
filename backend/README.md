@@ -14,6 +14,14 @@ uvicorn app.main:app --reload
 ..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv
 ```
 
+If Azure AI Language credentials are configured, the runner will ingest pending file records and then analyze any raw texts that do not yet have sentiment results.
+
+Use this variant to ingest data without calling Azure AI:
+
+```powershell
+..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv --skip-analysis
+```
+
 ## Planned Next Steps
 
 - add Alembic migrations

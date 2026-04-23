@@ -80,6 +80,7 @@ def test_schema_metadata_matches_initial_tables(tmp_path: Path) -> None:
 
     assert set(inspector.get_table_names()) == {
         "analyzed_sentiments",
+        "opinion_assessments",
         "opinion_targets",
         "raw_texts",
     }

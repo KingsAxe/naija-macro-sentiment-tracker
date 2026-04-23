@@ -21,8 +21,13 @@ class Settings(BaseSettings):
     pgpassword: str | None = None
     azure_language_endpoint: str = ""
     azure_language_key: str = ""
+    azure_language_default_language: str = "en"
+    azure_language_batch_size: int = 10
+    azure_language_retry_attempts: int = 3
+    azure_language_retry_delay_seconds: int = 2
+    azure_language_batch_sleep_seconds: float = 1.0
     ingest_batch_size: int = 10
-    csv_source_path: str = "./data/sample_macro_sentiment.csv"
+    csv_source_path: str = "./data/raw_macro_data.csv"
 
     @computed_field
     @property

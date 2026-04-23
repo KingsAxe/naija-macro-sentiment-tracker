@@ -94,3 +94,18 @@ Completed Week 3 hardening work:
 Next likely work:
 - decide whether any extra ingestion metadata should be stored before Azure AI integration begins
 - move into Week 4 Azure AI sentiment and opinion-mining integration
+
+## Week 4 Progress
+
+### Work Started
+- added Azure AI Language configuration placeholders to the backend environment template
+- added an analysis service that batches pending `RawText` records and persists:
+  - `AnalyzedSentiment`
+  - `OpinionTarget`
+  - `OpinionAssessment`
+- updated the ETL runner so one command can perform ingestion and then sentiment analysis when Azure credentials are configured
+- added unit coverage for analysis persistence using a fake sentiment client
+- reduced Azure SDK HTTP logging to keep runtime logs focused on application-level ingestion and analysis summaries
+
+### Current Limitation
+- live Azure sentiment analysis has been verified locally against the configured Azure AI Language resource

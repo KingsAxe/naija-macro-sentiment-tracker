@@ -65,3 +65,22 @@ class OpinionTarget(Base):
     target_sentiment: Mapped[str] = mapped_column(String(50), index=True)
 
     analyzed_sentiment: Mapped[AnalyzedSentiment] = relationship(back_populates="opinion_targets")
+    assessments: Mapped[list[OpinionAssessment]] = relationship(
+        back_populates="opinion_target",
+        cascade="all, delete-orphan",
+    )
+
+
+class OpinionAssessment(Base):
+    __tablename__ = "opinion_assessments"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    opinion_target_id: Mapped[int] = mapped_column(
+        ForeignKey("opinion_targets.id"),
+        nullable=False,
+        index=True,
+    )
+    assessment_text: Mapped[str] = mapped_column(String(200), index=True)
+    assessment_sentiment: Mapped[str] = mapped_column(String(50), index=True)
+
+    opinion_target: Mapped[OpinionTarget] = relationship(back_populates="assessments")
