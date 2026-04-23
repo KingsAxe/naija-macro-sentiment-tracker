@@ -2,6 +2,7 @@ import type { FeedItem } from "@/lib/api";
 
 type LiveFeedProps = {
   items: FeedItem[];
+  totalItems: number;
 };
 
 const sentimentTone: Record<string, string> = {
@@ -11,7 +12,7 @@ const sentimentTone: Record<string, string> = {
   mixed: "bg-blue-300/15 text-blue-200",
 };
 
-export function LiveFeed({ items }: LiveFeedProps) {
+export function LiveFeed({ items, totalItems }: LiveFeedProps) {
   return (
     <section className="rounded-[1.75rem] border border-blue-200/15 bg-panel/95 p-6 shadow-panel">
       <div className="flex items-center justify-between">
@@ -20,13 +21,15 @@ export function LiveFeed({ items }: LiveFeedProps) {
           <h2 className="mt-2 text-2xl font-semibold">Recent Records</h2>
         </div>
         <span className="rounded-full border border-blue-100/10 px-3 py-1 text-sm text-slate-400">
-          {items.length} documents
+          {items.length} of {totalItems} documents
         </span>
       </div>
       <div className="mt-6 grid gap-3">
         {items.length === 0 ? (
           <article className="rounded-2xl border border-blue-100/10 bg-blue-950/30 p-4">
-            <p className="text-sm leading-6 text-slate-400">No feed records available yet.</p>
+            <p className="text-sm leading-6 text-slate-400">
+              No feed records match the current filters.
+            </p>
           </article>
         ) : null}
         {items.map((item) => (

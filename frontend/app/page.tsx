@@ -1,4 +1,5 @@
 import { ControlPanel } from "@/components/control-panel";
+import { DashboardControls } from "@/components/dashboard-controls";
 import { LiveFeed } from "@/components/live-feed";
 import { MacroMoodChart } from "@/components/macro-mood-chart";
 import { TargetHeatmap } from "@/components/target-heatmap";
@@ -6,13 +7,34 @@ import { getAssessments, getFeed, getSentimentSummary, getTargets } from "@/lib/
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: Promise<{
+    topic?: string;
+    sentiment?: string;
+  }>;
+};
+
+function isPresent(value: string | null): value is string {
+  return Boolean(value);
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const filters = (await searchParams) ?? {};
   const [summary, targets, assessments, feed] = await Promise.all([
     getSentimentSummary(),
     getTargets(),
     getAssessments(),
     getFeed(),
   ]);
+  const topics = Array.from(new Set(feed.map((item) => item.topic_label).filter(isPresent))).sort();
+  const sentiments = Array.from(
+    new Set(feed.map((item) => item.overall_sentiment).filter(isPresent)),
+  ).sort();
+  const filteredFeed = feed.filter((item) => {
+    const topicMatches = !filters.topic || item.topic_label === filters.topic;
+    const sentimentMatches = !filters.sentiment || item.overall_sentiment === filters.sentiment;
+    return topicMatches && sentimentMatches;
+  });
 
   return (
     <main className="min-h-screen px-6 py-10 md:px-10">
@@ -39,7 +61,8 @@ export default async function HomePage() {
           <TargetHeatmap targets={targets} assessments={assessments} />
         </section>
 
-        <LiveFeed items={feed} />
+        <DashboardControls topics={topics} sentiments={sentiments} />
+        <LiveFeed items={filteredFeed} totalItems={feed.length} />
       </div>
     </main>
   );
