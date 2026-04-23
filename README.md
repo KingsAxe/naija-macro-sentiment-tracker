@@ -6,8 +6,9 @@ Local-first macroeconomic sentiment tracker for public discussion about the Nige
 
 - File-based ingestion for manual X datasets in CSV/XLSX form.
 - Cleaning and EDA audit notebook at `backend/data/01_data_cleaning_eda.ipynb`.
-- Production ETL runner with validation, deduplication, run tracking, logging, and PostgreSQL writes.
+- Production ETL runner with validation, deduplication, run tracking, QA summaries, and PostgreSQL writes.
 - RSS-first Vanguard and Punch news ingestion for macro-relevant business articles.
+- Daily scheduler support with API toggle control, disabled by default.
 - SQLAlchemy models and Alembic migrations for:
   - raw text
   - ingestion runs
@@ -15,7 +16,7 @@ Local-first macroeconomic sentiment tracker for public discussion about the Nige
   - opinion targets
   - opinion assessments
 - Azure AI Language sentiment analysis with opinion mining.
-- FastAPI endpoints for summary, targets, assessments, feed, and ingestion trigger.
+- FastAPI endpoints for summary, targets, assessments, feed, ingestion runs, and scheduler control.
 - Next.js dashboard wired to live backend data.
 
 ## Repository Layout
@@ -34,6 +35,7 @@ Copy-Item backend\.env.example backend\.env
 ```
 
 Then fill `backend/.env` with local PostgreSQL and Azure AI Language values.
+Scheduler settings are optional and default to disabled.
 
 Frontend:
 
@@ -78,6 +80,8 @@ Useful backend URLs:
 - `http://127.0.0.1:8000/api/sentiment/targets`
 - `http://127.0.0.1:8000/api/sentiment/assessments`
 - `http://127.0.0.1:8000/api/feed`
+- `http://127.0.0.1:8000/api/ingest/runs`
+- `http://127.0.0.1:8000/api/ingest/scheduler`
 
 ## ETL And Analysis
 
@@ -103,6 +107,22 @@ cd backend
 ```
 
 Use `--skip-news-pages` to ingest RSS titles/summaries only without fetching article pages.
+
+Daily scheduler config lives in `backend/.env`:
+
+```text
+SCHEDULER_ENABLED=false
+SCHEDULER_DAILY_HOUR=6
+SCHEDULER_INCLUDE_NEWS=true
+SCHEDULER_NEWS_LIMIT=20
+SCHEDULER_SKIP_NEWS_PAGES=true
+```
+
+Runtime scheduler toggle:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/ingest/scheduler -ContentType "application/json" -Body '{"enabled":true}'
+```
 
 The current manual X dataset uses the contract documented at `docs/manual-x-data-contract.md`.
 
@@ -153,6 +173,6 @@ Current verified local database state after Azure analysis:
 
 ## Next Work
 
-- Visually QA the dashboard against the live backend API.
-- Refine dashboard layout and loading/error states.
+- Review ingestion-run QA summaries against live news refreshes.
 - Analyze newly ingested Vanguard/Punch rows and review dashboard behavior with mixed X/news data.
+- Add deeper UI drill-down only if it helps explain the analysis better.

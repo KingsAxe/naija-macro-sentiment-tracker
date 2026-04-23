@@ -5,14 +5,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#061126",
-        panel: "#0b1b33",
-        primary: "#0b3a78",
-        primaryBright: "#2563eb",
-        signal: "#2dd4bf",
+        ink: "#050505",
+        panel: "#101010",
+        primary: "#1f1f1f",
+        primaryBright: "#f5f5f5",
+        signal: "#34d399",
         warning: "#f59e0b",
         danger: "#fb7185",
-        accent: "#93c5fd",
+        accent: "#d4d4d4",
       },
       fontFamily: {
         sans: ["Space Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],

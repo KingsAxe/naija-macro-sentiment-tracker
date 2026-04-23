@@ -28,17 +28,17 @@ export function DashboardControls({ topics, sentiments }: DashboardControlsProps
   }
 
   return (
-    <section className="rounded-[1.75rem] border border-blue-200/15 bg-panel/95 p-5 shadow-panel">
+    <section className="rounded-[1.75rem] border border-white/10 bg-panel/95 p-5 shadow-panel">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-slate-500">Dashboard Controls</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-neutral-500">Dashboard Controls</p>
           <h2 className="mt-2 text-xl font-semibold">Focus the feed</h2>
         </div>
         <div className="grid gap-3 md:grid-cols-[180px_180px_auto_auto]">
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-2 text-sm text-neutral-300">
             Topic
             <select
-              className="rounded-xl border border-blue-100/10 bg-blue-950/60 px-3 py-2 text-slate-100 outline-none ring-blue-300/40 focus:ring-2"
+              className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-neutral-100 outline-none ring-white/20 focus:ring-2"
               value={activeTopic}
               onChange={(event) => updateFilter("topic", event.target.value)}
             >
@@ -50,10 +50,10 @@ export function DashboardControls({ topics, sentiments }: DashboardControlsProps
               ))}
             </select>
           </label>
-          <label className="grid gap-2 text-sm text-slate-300">
+          <label className="grid gap-2 text-sm text-neutral-300">
             Sentiment
             <select
-              className="rounded-xl border border-blue-100/10 bg-blue-950/60 px-3 py-2 text-slate-100 outline-none ring-blue-300/40 focus:ring-2"
+              className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-neutral-100 outline-none ring-white/20 focus:ring-2"
               value={activeSentiment}
               onChange={(event) => updateFilter("sentiment", event.target.value)}
             >
@@ -66,14 +66,14 @@ export function DashboardControls({ topics, sentiments }: DashboardControlsProps
             </select>
           </label>
           <button
-            className="rounded-xl border border-blue-100/10 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10"
+            className="rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-white/10"
             type="button"
             onClick={clearFilters}
           >
             Clear
           </button>
           <button
-            className="rounded-xl bg-gradient-to-r from-primaryBright to-signal px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+            className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200"
             type="button"
             onClick={() => router.refresh()}
           >

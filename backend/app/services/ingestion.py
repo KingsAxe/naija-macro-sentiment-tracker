@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -37,9 +38,12 @@ class IngestionRunResult:
     run_id: int
     source_file: str
     source_name: str | None
+    fetched_count: int
     ingested_count: int
     skipped_count: int
     duplicate_count: int
+    rejected_count: int
+    qa_summary: str | None
 
 
 def _create_ingestion_run(
@@ -64,14 +68,20 @@ def _mark_ingestion_run_completed(
     run: IngestionRun,
     *,
     source_name: str | None,
+    fetched_count: int,
     inserted_count: int,
     skipped_count: int,
+    rejected_count: int = 0,
+    qa_summary: dict[str, object] | None = None,
 ) -> None:
     run.source_name = source_name
     run.status = "completed"
+    run.fetched_count = fetched_count
     run.inserted_count = inserted_count
     run.skipped_count = skipped_count
     run.duplicate_count = skipped_count
+    run.rejected_count = rejected_count
+    run.qa_summary = json.dumps(qa_summary, sort_keys=True) if qa_summary else None
     run.completed_at = datetime.now(tz=LAGOS_TZ)
     session.add(run)
     session.commit()
@@ -341,8 +351,15 @@ def ingest_file_to_database(
             session=session,
             run=run,
             source_name=source_name,
+            fetched_count=len(cleaned),
             inserted_count=ingested_count,
             skipped_count=skipped_count,
+            qa_summary={
+                "source_names": [source_name] if source_name else [],
+                "validated_rows": len(cleaned),
+                "duplicate_count": skipped_count,
+                "rejected_count": 0,
+            },
         )
         if logger:
             logger.info(
@@ -359,9 +376,20 @@ def ingest_file_to_database(
             run_id=run.id,
             source_file=str(resolved_path),
             source_name=source_name,
+            fetched_count=len(cleaned),
             ingested_count=ingested_count,
             skipped_count=skipped_count,
             duplicate_count=skipped_count,
+            rejected_count=0,
+            qa_summary=json.dumps(
+                {
+                    "source_names": [source_name] if source_name else [],
+                    "validated_rows": len(cleaned),
+                    "duplicate_count": skipped_count,
+                    "rejected_count": 0,
+                },
+                sort_keys=True,
+            ),
         )
     except Exception as exc:
         _mark_ingestion_run_failed(session=session, run=run, error=exc)
@@ -384,7 +412,10 @@ def trigger_ingestion(session: Session) -> IngestTriggerResponse:
         run_id=result.run_id,
         source_file=result.source_file,
         source_name=result.source_name,
+        fetched_count=result.fetched_count,
         ingested_count=result.ingested_count,
         skipped_count=result.skipped_count,
         duplicate_count=result.duplicate_count,
+        rejected_count=result.rejected_count,
+        qa_summary=result.qa_summary,
     )

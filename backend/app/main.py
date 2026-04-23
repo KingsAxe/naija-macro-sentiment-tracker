@@ -7,6 +7,7 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.db.base import Base
 from app.db.session import engine
+from app.services.scheduler import ingestion_scheduler
 
 settings = get_settings()
 
@@ -15,7 +16,9 @@ settings = get_settings()
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # Keep local boot simple until Alembic-managed database setup is fully wired in.
     Base.metadata.create_all(bind=engine)
+    ingestion_scheduler.start()
     yield
+    ingestion_scheduler.stop()
 
 
 app = FastAPI(

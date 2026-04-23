@@ -37,12 +37,16 @@ def test_healthcheck_and_frontdoor_routes(tmp_path: Path) -> None:
     summary_response = client.get("/api/sentiment/summary")
     targets_response = client.get("/api/sentiment/targets")
     feed_response = client.get("/api/feed")
+    scheduler_response = client.get("/api/ingest/scheduler")
+    runs_response = client.get("/api/ingest/runs")
 
     assert root_response.status_code == 200
     assert health_response.status_code == 200
     assert summary_response.status_code == 200
     assert targets_response.status_code == 200
     assert feed_response.status_code == 200
+    assert scheduler_response.status_code == 200
+    assert runs_response.status_code == 200
     assert summary_response.json() == {
         "total_documents": 0,
         "positive": 0,
@@ -51,6 +55,8 @@ def test_healthcheck_and_frontdoor_routes(tmp_path: Path) -> None:
     }
     assert targets_response.json() == []
     assert feed_response.json() == {"items": []}
+    assert scheduler_response.json()["enabled"] is False
+    assert runs_response.json() == []
 
 
 def test_manual_ingestion_writes_raw_text_records(tmp_path: Path) -> None:
@@ -65,9 +71,12 @@ def test_manual_ingestion_writes_raw_text_records(tmp_path: Path) -> None:
     assert payload["status"] == "completed"
     assert payload["run_id"] is not None
     assert payload["source_name"] == "x"
+    assert payload["fetched_count"] == len(cleaned)
     assert payload["ingested_count"] == len(cleaned)
     assert payload["skipped_count"] == 0
     assert payload["duplicate_count"] == 0
+    assert payload["rejected_count"] == 0
+    assert payload["qa_summary"] is not None
 
     with Session(engine) as session:
         row_count = session.execute(text("select count(*) from raw_texts")).scalar_one()
@@ -89,8 +98,23 @@ def test_manual_ingestion_reports_duplicate_records(tmp_path: Path) -> None:
     payload = second_response.json()
     assert payload["status"] == "completed"
     assert payload["ingested_count"] == 0
+    assert payload["fetched_count"] == len(cleaned)
     assert payload["skipped_count"] == len(cleaned)
     assert payload["duplicate_count"] == len(cleaned)
+
+
+def test_scheduler_toggle_endpoint(tmp_path: Path) -> None:
+    client = build_test_client(tmp_path)
+
+    enable_response = client.post("/api/ingest/scheduler", json={"enabled": True})
+    disable_response = client.post("/api/ingest/scheduler", json={"enabled": False})
+
+    assert enable_response.status_code == 200
+    assert enable_response.json()["enabled"] is True
+    assert enable_response.json()["next_run_at"] is not None
+    assert disable_response.status_code == 200
+    assert disable_response.json()["enabled"] is False
+    assert disable_response.json()["next_run_at"] is None
 
 
 def test_schema_metadata_matches_initial_tables(tmp_path: Path) -> None:

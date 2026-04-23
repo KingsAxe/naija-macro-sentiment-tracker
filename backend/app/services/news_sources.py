@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from email.utils import parsedate_to_datetime
 from html import unescape
@@ -26,6 +27,7 @@ from app.services.ingestion import (
 REQUEST_TIMEOUT_SECONDS = 20
 USER_AGENT = "NaijaMacroSentimentTracker/0.1 (+local research project)"
 MAX_ARTICLE_CHARS = 8000
+MIN_CONTENT_LENGTH = 80
 
 TOPIC_KEYWORDS = {
     "FX Rate": (
@@ -67,6 +69,16 @@ NEWS_SOURCES = (
 
 
 @dataclass(frozen=True, slots=True)
+class NewsArticleCandidate:
+    source: str
+    title: str
+    url: str
+    summary: str
+    published_at: datetime | None
+    topic_label: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class NewsArticle:
     source: str
     title: str
@@ -75,6 +87,19 @@ class NewsArticle:
     published_at: datetime | None
     topic_label: str
     content: str
+
+
+@dataclass(slots=True)
+class NewsQualityReport:
+    source: str
+    fetched_count: int
+    macro_candidate_count: int
+    accepted_count: int
+    rejected_count: int
+    duplicate_url_count: int
+    short_content_count: int
+    missing_topic_count: int
+    topic_coverage: dict[str, int]
 
 
 class ParagraphExtractor(HTMLParser):
@@ -124,34 +149,6 @@ def fetch_url(url: str) -> str:
         return response.read().decode("utf-8", errors="replace")
 
 
-def parse_feed_items(source: NewsSource, feed_xml: str) -> list[NewsArticle]:
-    root = ElementTree.fromstring(feed_xml)
-    items = root.findall(".//item")
-    articles: list[NewsArticle] = []
-
-    for item in items:
-        title = normalize_whitespace(item.findtext("title") or "")
-        url = normalize_whitespace(item.findtext("link") or "")
-        summary = strip_html(item.findtext("description") or "")
-        published_at = parse_published_at(item.findtext("pubDate"))
-        topic_label = classify_macro_topic(f"{title} {summary}")
-        if not title or not url or topic_label is None:
-            continue
-        articles.append(
-            NewsArticle(
-                source=source.source,
-                title=title,
-                url=url,
-                summary=summary,
-                published_at=published_at,
-                topic_label=topic_label,
-                content=normalize_whitespace(f"{title}. {summary}"),
-            )
-        )
-
-    return articles
-
-
 def parse_published_at(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -164,40 +161,121 @@ def parse_published_at(value: str | None) -> datetime | None:
     return parsed.astimezone(LAGOS_TZ)
 
 
+def parse_feed_candidates(source: NewsSource, feed_xml: str) -> list[NewsArticleCandidate]:
+    root = ElementTree.fromstring(feed_xml)
+    items = root.findall(".//item")
+    candidates: list[NewsArticleCandidate] = []
+
+    for item in items:
+        title = normalize_whitespace(item.findtext("title") or "")
+        url = normalize_whitespace(item.findtext("link") or "")
+        summary = strip_html(item.findtext("description") or "")
+        published_at = parse_published_at(item.findtext("pubDate"))
+        topic_label = classify_macro_topic(f"{title} {summary}")
+        if not title or not url:
+            continue
+        candidates.append(
+            NewsArticleCandidate(
+                source=source.source,
+                title=title,
+                url=url,
+                summary=summary,
+                published_at=published_at,
+                topic_label=topic_label,
+            )
+        )
+
+    return candidates
+
+
 def extract_article_text(html: str) -> str:
     parser = ParagraphExtractor()
     parser.feed(html)
     return normalize_whitespace(" ".join(parser.paragraphs))[:MAX_ARTICLE_CHARS]
 
 
-def enrich_articles_with_page_text(
-    articles: list[NewsArticle],
+def enrich_candidates_with_page_text(
+    candidates: list[NewsArticleCandidate],
+    *,
+    fetch_pages: bool,
     logger: logging.Logger | None = None,
 ) -> list[NewsArticle]:
-    enriched: list[NewsArticle] = []
-    for article in articles:
-        content = article.content
-        try:
-            page_text = extract_article_text(fetch_url(article.url))
-        except (URLError, TimeoutError, OSError, ValueError) as exc:
-            if logger:
-                logger.warning("Article fetch failed | source=%s | url=%s | error=%s", article.source, article.url, exc)
-            page_text = ""
+    articles: list[NewsArticle] = []
+    for candidate in candidates:
+        base_content = normalize_whitespace(f"{candidate.title}. {candidate.summary}")
+        content = base_content
 
-        if page_text:
-            content = normalize_whitespace(f"{article.title}. {page_text}")
-        enriched.append(
+        if fetch_pages:
+            try:
+                page_text = extract_article_text(fetch_url(candidate.url))
+            except (URLError, TimeoutError, OSError, ValueError) as exc:
+                if logger:
+                    logger.warning(
+                        "Article fetch failed | source=%s | url=%s | error=%s",
+                        candidate.source,
+                        candidate.url,
+                        exc,
+                    )
+                page_text = ""
+            if page_text:
+                content = normalize_whitespace(f"{candidate.title}. {page_text}")
+
+        if candidate.topic_label is None:
+            continue
+
+        articles.append(
             NewsArticle(
-                source=article.source,
-                title=article.title,
-                url=article.url,
-                summary=article.summary,
-                published_at=article.published_at,
-                topic_label=article.topic_label,
+                source=candidate.source,
+                title=candidate.title,
+                url=candidate.url,
+                summary=candidate.summary,
+                published_at=candidate.published_at,
+                topic_label=candidate.topic_label,
                 content=content,
             )
         )
-    return enriched
+
+    return articles
+
+
+def validate_news_articles(
+    candidates: list[NewsArticleCandidate],
+    *,
+    fetch_pages: bool,
+    logger: logging.Logger | None = None,
+) -> tuple[list[NewsArticle], NewsQualityReport]:
+    enriched = enrich_candidates_with_page_text(candidates, fetch_pages=fetch_pages, logger=logger)
+    accepted: list[NewsArticle] = []
+    seen_urls: set[str] = set()
+    duplicate_url_count = 0
+    short_content_count = 0
+    topic_coverage: dict[str, int] = {}
+
+    for article in enriched:
+        if article.url in seen_urls:
+            duplicate_url_count += 1
+            continue
+        seen_urls.add(article.url)
+
+        if len(article.content) < MIN_CONTENT_LENGTH:
+            short_content_count += 1
+            continue
+
+        topic_coverage[article.topic_label] = topic_coverage.get(article.topic_label, 0) + 1
+        accepted.append(article)
+
+    report = NewsQualityReport(
+        source=candidates[0].source if candidates else "unknown",
+        fetched_count=len(candidates),
+        macro_candidate_count=len(enriched),
+        accepted_count=len(accepted),
+        rejected_count=duplicate_url_count + short_content_count,
+        duplicate_url_count=duplicate_url_count,
+        short_content_count=short_content_count,
+        missing_topic_count=sum(1 for candidate in candidates if candidate.topic_label is None),
+        topic_coverage=topic_coverage,
+    )
+    return accepted, report
 
 
 def articles_to_dataframe(articles: list[NewsArticle]) -> pd.DataFrame:
@@ -225,33 +303,42 @@ def ingest_news_source(
 ) -> IngestionRunResult:
     run = _create_ingestion_run(session=session, source_type="news_feed", source_file=source.feed_url)
     try:
-        articles = parse_feed_items(source, fetch_url(source.feed_url))[:limit]
-        if fetch_pages:
-            articles = enrich_articles_with_page_text(articles, logger=logger)
+        candidates = parse_feed_candidates(source, fetch_url(source.feed_url))[:limit]
+        articles, report = validate_news_articles(candidates, fetch_pages=fetch_pages, logger=logger)
         cleaned = articles_to_dataframe(articles)
         ingested_count, skipped_count = bulk_insert_clean_records(session=session, cleaned=cleaned)
+        qa_summary = asdict(report)
+        qa_summary["duplicate_count"] = skipped_count
+
         _mark_ingestion_run_completed(
             session=session,
             run=run,
             source_name=source.source,
+            fetched_count=report.fetched_count,
             inserted_count=ingested_count,
             skipped_count=skipped_count,
+            rejected_count=report.rejected_count + report.missing_topic_count,
+            qa_summary=qa_summary,
         )
         if logger:
             logger.info(
-                "News ingestion complete | run_id=%s | source=%s | inserted=%s | duplicates=%s",
+                "News ingestion complete | run_id=%s | source=%s | inserted=%s | duplicates=%s | rejected=%s",
                 run.id,
                 source.source,
                 ingested_count,
                 skipped_count,
+                report.rejected_count + report.missing_topic_count,
             )
         return IngestionRunResult(
             run_id=run.id,
             source_file=source.feed_url,
             source_name=source.source,
+            fetched_count=report.fetched_count,
             ingested_count=ingested_count,
             skipped_count=skipped_count,
             duplicate_count=skipped_count,
+            rejected_count=report.rejected_count + report.missing_topic_count,
+            qa_summary=json.dumps(qa_summary, sort_keys=True),
         )
     except Exception as exc:
         _mark_ingestion_run_failed(session=session, run=run, error=exc)

@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     azure_language_batch_sleep_seconds: float = 1.0
     ingest_batch_size: int = 10
     csv_source_path: str = "./data/raw_macro_data.csv"
+    scheduler_enabled: bool = False
+    scheduler_daily_hour: int = 6
+    scheduler_include_news: bool = True
+    scheduler_news_limit: int = 20
+    scheduler_skip_news_pages: bool = True
 
     @computed_field
     @property

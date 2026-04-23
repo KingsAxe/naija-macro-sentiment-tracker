@@ -7,11 +7,12 @@ from app.services.news_sources import (
     classify_macro_topic,
     extract_article_text,
     ingest_news_source,
-    parse_feed_items,
+    parse_feed_candidates,
+    validate_news_articles,
 )
 
 
-def test_parse_feed_items_keeps_macro_relevant_articles() -> None:
+def test_parse_feed_candidates_keeps_feed_items_and_marks_topics() -> None:
     feed_xml = """<?xml version="1.0"?>
     <rss><channel>
       <item>
@@ -28,12 +29,16 @@ def test_parse_feed_items_keeps_macro_relevant_articles() -> None:
     </channel></rss>
     """
 
-    articles = parse_feed_items(NewsSource(source="punch", feed_url="https://example.com"), feed_xml)
+    articles = parse_feed_candidates(
+        NewsSource(source="punch", feed_url="https://example.com"),
+        feed_xml,
+    )
 
-    assert len(articles) == 1
+    assert len(articles) == 2
     assert articles[0].source == "punch"
     assert articles[0].topic_label == "FX Rate"
     assert articles[0].published_at is not None
+    assert articles[1].topic_label is None
 
 
 def test_article_extraction_and_topic_classification() -> None:
@@ -48,6 +53,40 @@ def test_article_extraction_and_topic_classification() -> None:
 
     assert "Petrol prices" in text
     assert classify_macro_topic(text) == "Fuel Price"
+
+
+def test_validate_news_articles_reports_rejections() -> None:
+    candidates = [
+        NewsSource(source="vanguard", feed_url="https://example.com/feed"),
+    ]
+    feed_xml = """<?xml version="1.0"?>
+    <rss><channel>
+      <item>
+        <title>CBN says naira pressure is easing</title>
+        <link>https://example.com/a</link>
+        <description>Naira liquidity is improving in the official market.</description>
+      </item>
+      <item>
+        <title>CBN says naira pressure is easing</title>
+        <link>https://example.com/a</link>
+        <description>Naira liquidity is improving in the official market.</description>
+      </item>
+      <item>
+        <title>Music concert sells out</title>
+        <link>https://example.com/b</link>
+        <description>Fans arrived early.</description>
+      </item>
+    </channel></rss>
+    """
+
+    parsed = parse_feed_candidates(candidates[0], feed_xml)
+    accepted, report = validate_news_articles(parsed, fetch_pages=False)
+
+    assert len(accepted) == 1
+    assert report.fetched_count == 3
+    assert report.missing_topic_count == 1
+    assert report.duplicate_url_count == 1
+    assert report.accepted_count == 1
 
 
 def test_news_source_ingestion_records_run_and_duplicates(monkeypatch) -> None:
@@ -80,5 +119,6 @@ def test_news_source_ingestion_records_run_and_duplicates(monkeypatch) -> None:
     assert first_result.ingested_count == 1
     assert second_result.ingested_count == 0
     assert second_result.duplicate_count == 1
+    assert first_result.qa_summary is not None
     assert raw_count == 1
     assert run_count == 2
