@@ -1,9 +1,18 @@
 import { ControlPanel } from "@/components/control-panel";
 import { DashboardControls } from "@/components/dashboard-controls";
+import { IngestionQualityBoard } from "@/components/ingestion-quality-board";
 import { LiveFeed } from "@/components/live-feed";
 import { MacroMoodChart } from "@/components/macro-mood-chart";
+import { SchedulerPanel } from "@/components/scheduler-panel";
 import { TargetHeatmap } from "@/components/target-heatmap";
-import { getAssessments, getFeed, getSentimentSummary, getTargets } from "@/lib/api";
+import {
+  getAssessments,
+  getFeed,
+  getIngestionRuns,
+  getSchedulerStatus,
+  getSentimentSummary,
+  getTargets,
+} from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +29,13 @@ function isPresent(value: string | null): value is string {
 
 export default async function HomePage({ searchParams }: HomePageProps) {
   const filters = (await searchParams) ?? {};
-  const [summary, targets, assessments, feed] = await Promise.all([
+  const [summary, targets, assessments, feed, runs, scheduler] = await Promise.all([
     getSentimentSummary(),
     getTargets(),
     getAssessments(),
     getFeed(),
+    getIngestionRuns(),
+    getSchedulerStatus(),
   ]);
   const topics = Array.from(new Set(feed.map((item) => item.topic_label).filter(isPresent))).sort();
   const sentiments = Array.from(
@@ -61,6 +72,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           <TargetHeatmap targets={targets} assessments={assessments} />
         </section>
 
+        <SchedulerPanel scheduler={scheduler} />
+        <IngestionQualityBoard runs={runs} />
         <DashboardControls topics={topics} sentiments={sentiments} />
         <LiveFeed items={filteredFeed} totalItems={feed.length} />
       </div>

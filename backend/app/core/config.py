@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     azure_language_batch_sleep_seconds: float = 1.0
     ingest_batch_size: int = 10
     csv_source_path: str = "./data/raw_macro_data.csv"
+    frontend_origin: str = "http://localhost:3000"
     scheduler_enabled: bool = False
     scheduler_daily_hour: int = 6
     scheduler_include_news: bool = True
@@ -49,6 +50,16 @@ class Settings(BaseSettings):
             )
 
         return "sqlite:///./naija_sentiment.db"
+
+    @computed_field
+    @property
+    def cors_allowed_origins(self) -> list[str]:
+        origins = {
+            self.frontend_origin,
+            "http://127.0.0.1:3000",
+            "http://localhost:3000",
+        }
+        return sorted(origin for origin in origins if origin)
 
     model_config = SettingsConfigDict(
         env_file=ENV_FILE,

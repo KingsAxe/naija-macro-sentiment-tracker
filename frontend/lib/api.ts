@@ -30,6 +30,36 @@ export type FeedItem = {
   overall_sentiment: string | null;
 };
 
+export type IngestionRunSummary = {
+  id: number;
+  source_type: string;
+  source_name: string | null;
+  source_file: string | null;
+  status: string;
+  fetched_count: number;
+  inserted_count: number;
+  skipped_count: number;
+  duplicate_count: number;
+  rejected_count: number;
+  qa_summary: string | null;
+  error_message: string | null;
+  started_at: string;
+  completed_at: string | null;
+};
+
+export type SchedulerStatus = {
+  enabled: boolean;
+  running: boolean;
+  daily_hour: number;
+  next_run_at: string | null;
+  last_started_at: string | null;
+  last_completed_at: string | null;
+  last_status: string | null;
+  include_news: boolean;
+  skip_news_pages: boolean;
+  news_limit: number;
+};
+
 type FeedResponse = {
   items: FeedItem[];
 };
@@ -72,4 +102,23 @@ export async function getAssessments(): Promise<AssessmentSentiment[]> {
 export async function getFeed(): Promise<FeedItem[]> {
   const response = await fetchJson<FeedResponse>("/feed", { items: [] });
   return response.items;
+}
+
+export async function getIngestionRuns(): Promise<IngestionRunSummary[]> {
+  return fetchJson<IngestionRunSummary[]>("/ingest/runs", []);
+}
+
+export async function getSchedulerStatus(): Promise<SchedulerStatus> {
+  return fetchJson<SchedulerStatus>("/ingest/scheduler", {
+    enabled: false,
+    running: false,
+    daily_hour: 6,
+    next_run_at: null,
+    last_started_at: null,
+    last_completed_at: null,
+    last_status: null,
+    include_news: true,
+    skip_news_pages: true,
+    news_limit: 20,
+  });
 }

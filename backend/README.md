@@ -41,6 +41,7 @@ Use `--skip-news-pages` when you only want RSS titles/summaries and do not want 
 Daily scheduler config is read from `backend/.env` and is disabled by default:
 
 ```text
+FRONTEND_ORIGIN=http://localhost:3000
 SCHEDULER_ENABLED=false
 SCHEDULER_DAILY_HOUR=6
 SCHEDULER_INCLUDE_NEWS=true

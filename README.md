@@ -36,6 +36,7 @@ Copy-Item backend\.env.example backend\.env
 
 Then fill `backend/.env` with local PostgreSQL and Azure AI Language values.
 Scheduler settings are optional and default to disabled.
+Set `FRONTEND_ORIGIN` if your Next.js app is served from a different host.
 
 Frontend:
 
