@@ -2,8 +2,18 @@ import { ControlPanel } from "@/components/control-panel";
 import { LiveFeed } from "@/components/live-feed";
 import { MacroMoodChart } from "@/components/macro-mood-chart";
 import { TargetHeatmap } from "@/components/target-heatmap";
+import { getAssessments, getFeed, getSentimentSummary, getTargets } from "@/lib/api";
 
-export default function HomePage() {
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const [summary, targets, assessments, feed] = await Promise.all([
+    getSentimentSummary(),
+    getTargets(),
+    getAssessments(),
+    getFeed(),
+  ]);
+
   return (
     <main className="min-h-screen px-6 py-10 md:px-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -15,20 +25,20 @@ export default function HomePage() {
                 Public mood tracking for the Nigerian economy, built for local-first analysis.
               </h1>
               <p className="mt-4 max-w-2xl text-base text-slate-300 md:text-lg">
-                The first dashboard shell is in place. Connect the ingestion pipeline and sentiment
-                endpoints to turn these placeholders into live metrics.
+                Live sentiment, opinion target, and feed views now read from the local FastAPI
+                analysis pipeline.
               </p>
             </div>
-            <ControlPanel />
+            <ControlPanel summary={summary} />
           </div>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <MacroMoodChart />
-          <TargetHeatmap />
+          <MacroMoodChart summary={summary} />
+          <TargetHeatmap targets={targets} assessments={assessments} />
         </section>
 
-        <LiveFeed />
+        <LiveFeed items={feed} />
       </div>
     </main>
   );

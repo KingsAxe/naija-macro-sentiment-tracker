@@ -1,4 +1,12 @@
-export function ControlPanel() {
+import type { SentimentSummary } from "@/lib/api";
+
+type ControlPanelProps = {
+  summary: SentimentSummary;
+};
+
+export function ControlPanel({ summary }: ControlPanelProps) {
+  const hasAnalysis = summary.total_documents > 0;
+
   return (
     <aside className="rounded-[1.75rem] border border-cyan-200/10 bg-panel p-5 shadow-panel">
       <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Control Panel</p>
@@ -8,30 +16,34 @@ export function ControlPanel() {
           <div className="flex items-center justify-between">
             <span>Backend API</span>
             <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-emerald-300">
-              Scaffolded
+              Live
             </span>
           </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between">
-            <span>CSV ETL</span>
-            <span className="rounded-full bg-amber-400/15 px-3 py-1 text-amber-300">
-              Pending
+            <span>File ETL</span>
+            <span className="rounded-full bg-emerald-400/15 px-3 py-1 text-emerald-300">
+              Loaded
             </span>
           </div>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="flex items-center justify-between">
             <span>Azure AI</span>
-            <span className="rounded-full bg-rose-400/15 px-3 py-1 text-rose-300">
-              Not Wired
+            <span
+              className={`rounded-full px-3 py-1 ${
+                hasAnalysis ? "bg-emerald-400/15 text-emerald-300" : "bg-amber-400/15 text-amber-300"
+              }`}
+            >
+              {hasAnalysis ? "Analyzed" : "Awaiting Data"}
             </span>
           </div>
         </div>
       </div>
-      <button className="mt-6 w-full rounded-full bg-signal px-4 py-3 font-medium text-slate-950 transition hover:brightness-110">
-        Trigger Ingestion
-      </button>
+      <p className="mt-6 rounded-2xl bg-signal px-4 py-3 text-center font-medium text-slate-950">
+        {summary.total_documents} analyzed records
+      </p>
     </aside>
   );
 }

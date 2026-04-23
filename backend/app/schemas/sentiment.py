@@ -18,6 +18,14 @@ class TargetSentiment(BaseModel):
     negative_mentions: int
 
 
+class AssessmentSentiment(BaseModel):
+    assessment_text: str
+    mentions: int
+    positive_mentions: int
+    neutral_mentions: int
+    negative_mentions: int
+
+
 class FeedItem(BaseModel):
     id: int
     source: str

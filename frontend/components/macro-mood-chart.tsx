@@ -1,10 +1,17 @@
-const summary = [
-  { label: "Positive", value: "0", tone: "text-emerald-300" },
-  { label: "Neutral", value: "0", tone: "text-amber-300" },
-  { label: "Negative", value: "0", tone: "text-rose-300" },
-];
+import type { SentimentSummary } from "@/lib/api";
 
-export function MacroMoodChart() {
+type MacroMoodChartProps = {
+  summary: SentimentSummary;
+};
+
+export function MacroMoodChart({ summary }: MacroMoodChartProps) {
+  const cards = [
+    { label: "Positive", value: summary.positive, tone: "text-emerald-300" },
+    { label: "Neutral", value: summary.neutral, tone: "text-amber-300" },
+    { label: "Negative", value: summary.negative, tone: "text-rose-300" },
+  ];
+  const total = Math.max(summary.total_documents, 1);
+
   return (
     <section className="rounded-[1.75rem] border border-white/10 bg-panel p-6 shadow-panel">
       <div className="flex items-center justify-between">
@@ -12,23 +19,35 @@ export function MacroMoodChart() {
           <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Macro Mood</p>
           <h2 className="mt-2 text-2xl font-semibold">Sentiment Overview</h2>
         </div>
-        <p className="text-sm text-slate-400">Awaiting live API data</p>
+        <p className="text-sm text-slate-400">{summary.total_documents} analyzed documents</p>
       </div>
       <div className="mt-8 grid gap-4 md:grid-cols-3">
-        {summary.map((item) => (
+        {cards.map((item) => (
           <div
             key={item.label}
             className="rounded-2xl border border-white/10 bg-white/5 p-5"
           >
             <p className="text-sm text-slate-400">{item.label}</p>
             <p className={`mt-3 text-4xl font-semibold ${item.tone}`}>{item.value}</p>
+            <p className="mt-2 text-xs text-slate-500">
+              {Math.round((item.value / total) * 100)}% of analyzed records
+            </p>
           </div>
         ))}
       </div>
-      <div className="mt-8 h-64 rounded-[1.5rem] border border-dashed border-cyan-200/15 bg-slate-950/30 p-6">
-        <div className="flex h-full items-center justify-center text-center text-sm text-slate-500">
-          Chart placeholder for document-level sentiment trend lines.
-        </div>
+      <div className="mt-8 overflow-hidden rounded-[1.5rem] border border-cyan-200/15 bg-slate-950/30">
+        {cards.map((item) => (
+          <div key={item.label} className="grid grid-cols-[100px_1fr_52px] items-center gap-3 px-5 py-3">
+            <span className="text-sm text-slate-400">{item.label}</span>
+            <div className="h-3 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-cyan-300"
+                style={{ width: `${Math.max((item.value / total) * 100, item.value ? 4 : 0)}%` }}
+              />
+            </div>
+            <span className="text-right text-sm text-slate-300">{item.value}</span>
+          </div>
+        ))}
       </div>
     </section>
   );

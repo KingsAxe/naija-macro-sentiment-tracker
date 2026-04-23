@@ -109,3 +109,13 @@ Next likely work:
 
 ### Current Limitation
 - live Azure sentiment analysis has been verified locally against the configured Azure AI Language resource
+
+### Dashboard/API Progress
+- added an API endpoint for aggregated opinion assessments at `/api/sentiment/assessments`
+- wired the Next.js dashboard to fetch live backend data for:
+  - sentiment summary
+  - opinion targets
+  - opinion assessments
+  - recent feed records
+- replaced static dashboard placeholders with data-driven states and safe empty fallbacks
+- verified backend API smoke responses and frontend production build

@@ -3,8 +3,8 @@ from sqlalchemy import case, func, select
 from fastapi import APIRouter
 
 from app.api.deps import DbSession
-from app.models import AnalyzedSentiment, OpinionTarget
-from app.schemas.sentiment import SentimentSummary, TargetSentiment
+from app.models import AnalyzedSentiment, OpinionAssessment, OpinionTarget
+from app.schemas.sentiment import AssessmentSentiment, SentimentSummary, TargetSentiment
 
 router = APIRouter()
 
@@ -53,6 +53,39 @@ def get_targets(session: DbSession) -> list[TargetSentiment]:
     return [
         TargetSentiment(
             target_name=row.target_name,
+            mentions=row.mentions or 0,
+            positive_mentions=row.positive_mentions or 0,
+            neutral_mentions=row.neutral_mentions or 0,
+            negative_mentions=row.negative_mentions or 0,
+        )
+        for row in rows
+    ]
+
+
+@router.get("/assessments", response_model=list[AssessmentSentiment])
+def get_assessments(session: DbSession) -> list[AssessmentSentiment]:
+    rows = session.execute(
+        select(
+            OpinionAssessment.assessment_text,
+            func.count(OpinionAssessment.id).label("mentions"),
+            func.sum(case((OpinionAssessment.assessment_sentiment == "positive", 1), else_=0)).label(
+                "positive_mentions"
+            ),
+            func.sum(case((OpinionAssessment.assessment_sentiment == "neutral", 1), else_=0)).label(
+                "neutral_mentions"
+            ),
+            func.sum(case((OpinionAssessment.assessment_sentiment == "negative", 1), else_=0)).label(
+                "negative_mentions"
+            ),
+        )
+        .group_by(OpinionAssessment.assessment_text)
+        .order_by(func.count(OpinionAssessment.id).desc(), OpinionAssessment.assessment_text.asc())
+        .limit(20)
+    ).all()
+
+    return [
+        AssessmentSentiment(
+            assessment_text=row.assessment_text,
             mentions=row.mentions or 0,
             positive_mentions=row.positive_mentions or 0,
             neutral_mentions=row.neutral_mentions or 0,
