@@ -48,74 +48,92 @@ Week 1 is complete. The repository now has a runnable backend and frontend found
 ### Outcome
 Week 2 is complete. Local PostgreSQL is now configured as the active database target for the backend migration path.
 
-## Current Project State
+## Week 3 Summary: File-Based ETL Pipeline
 
-The project is currently positioned in **Week 3**, with the file-based ingestion baseline now implemented for the manually collected X dataset.
+### Scope Completed
+- Finalized the manual X CSV/XLSX ingestion contract.
+- Added notebook-based cleaning and EDA support for the manually collected X dataset.
+- Implemented production cleaning and normalization with Pandas.
+- Added the ETL runner for file-based ingestion into PostgreSQL.
+- Preserved `topic_label` through ingestion and feed exposure.
 
-What exists now:
-- planning and milestone documentation
-- backend FastAPI scaffold
-- SQLAlchemy domain models
-- Alembic migration baseline
-- local PostgreSQL schema applied
-- notebook-based cleaning and EDA audit trail for the manual X dataset
-- file-based ETL runner for CSV and XLSX ingestion
-- starter API routes for:
-  - `/api/health`
-  - `/api/sentiment/summary`
-  - `/api/sentiment/targets`
-  - `/api/feed`
-  - `/api/ingest/trigger`
-- frontend dashboard shell
-- production Pandas cleaning pipeline that writes `RawText` rows
-- manual X dataset already ingested into PostgreSQL for verification
+### Outcome
+Week 3 is complete. Manual X data can be validated, cleaned, and written into PostgreSQL through the production ingestion path.
 
-What is intentionally not started yet:
-- Azure AI sentiment and opinion mining integration
-- Vanguard and Punch scraping
-- scheduler integration
-- live frontend-to-backend data wiring for production behavior
+## Week 4 Summary: Azure AI Language Integration
 
-## Next Planned Phase
-
-The active planned phase is **Week 3: File-Based ETL Pipeline**.
-
-Completed Week 3 baseline work:
-- accepted the manual X CSV schema
-- added cleaning logic in a notebook and mirrored it in production code
-- added an ETL runner with logging
-- loaded the manual X dataset into PostgreSQL
-
-Completed Week 3 hardening work:
-- finalized the manual X file contract in a short repository document
-- added helper validation so future imports fail clearly if the file shape drifts
-- preserved `topic_label` in the database and feed pipeline
-
-Next likely work:
-- decide whether any extra ingestion metadata should be stored before Azure AI integration begins
-- move into Week 4 Azure AI sentiment and opinion-mining integration
-
-## Week 4 Progress
-
-### Work Started
-- added Azure AI Language configuration placeholders to the backend environment template
-- added an analysis service that batches pending `RawText` records and persists:
+### Scope Completed
+- Added Azure AI Language configuration and retry controls.
+- Implemented batch sentiment analysis with opinion mining.
+- Persisted:
   - `AnalyzedSentiment`
   - `OpinionTarget`
   - `OpinionAssessment`
-- updated the ETL runner so one command can perform ingestion and then sentiment analysis when Azure credentials are configured
-- added unit coverage for analysis persistence using a fake sentiment client
-- reduced Azure SDK HTTP logging to keep runtime logs focused on application-level ingestion and analysis summaries
+- Updated the ETL runner so ingestion and Azure analysis can run in one command.
+- Added automated tests for analysis persistence and API responses.
 
-### Current Limitation
-- live Azure sentiment analysis has been verified locally against the configured Azure AI Language resource
+### Outcome
+Week 4 is complete. The backend can now analyze pending raw documents through Azure AI Language and persist the results.
 
-### Dashboard/API Progress
-- added an API endpoint for aggregated opinion assessments at `/api/sentiment/assessments`
-- wired the Next.js dashboard to fetch live backend data for:
-  - sentiment summary
-  - opinion targets
-  - opinion assessments
-  - recent feed records
-- replaced static dashboard placeholders with data-driven states and safe empty fallbacks
-- verified backend API smoke responses and frontend production build
+## Week 5 Summary: Source Expansion and Ingestion Safeguards
+
+### Scope Completed
+- Added RSS-first Vanguard and Punch ingestion into the same normalized pipeline used for manual X data.
+- Added ingestion-run tracking with duplicate and rejection visibility.
+- Added source-aware QA summaries for news ingestion runs.
+- Added API support for recent ingestion runs and scheduler status.
+- Verified live news ingestion against Vanguard and Punch feeds.
+
+### Outcome
+Week 5 is complete. The application now supports manual X data plus curated news ingestion with observable run quality.
+
+## Week 6 Summary: Scheduler and Frontend Shell
+
+### Scope Completed
+- Added an env-driven daily scheduler that is disabled by default and can be toggled at runtime.
+- Added scheduler status and toggle endpoints.
+- Added CORS support for browser-based scheduler control.
+- Refined the frontend into a restrained black/neutral visual system.
+- Added dashboard visibility for scheduler state and ingestion QA.
+
+### Outcome
+Week 6 is complete. The system now has operational controls, tracked ingestion quality, and a production-style dashboard shell.
+
+## Current Project State
+
+The project is currently in **Week 7: Dashboard Completion and Local QA**, with Week 6 completed and Week 7 now partially delivered.
+
+What exists now:
+- Azure-backed sentiment analysis and opinion mining
+- PostgreSQL schema and Alembic migrations through the current scheduler/QA additions
+- manual X ingestion plus Vanguard and Punch ingestion
+- scheduler toggle support and recent run visibility
+- two-page Next.js dashboard:
+  - analysis page
+  - operations page
+- sentiment plotting, target/assessment views, live feed inspection, and source-performance comparison
+- backend API endpoints for summary, targets, assessments, feed, ingestion runs, and scheduler control
+
+What is still outstanding for full Week 7 completion:
+- frontend-triggered ingestion action from the dashboard
+- broader end-to-end UI validation after more production-like mixed-source data arrives
+- any additional loading/error-state refinement that appears necessary during that final QA pass
+
+## Current Milestone Assessment
+
+- Week 1: complete
+- Week 2: complete
+- Week 3: complete
+- Week 4: complete
+- Week 5: complete
+- Week 6: complete
+- Week 7: in progress
+
+## Next Planned Phase
+
+The active planned phase is **Week 7: Dashboard Completion and Local QA**.
+
+Next likely work:
+- decide whether dashboard-triggered ingestion is required before Azure deployment work begins
+- continue local QA with scheduled refreshes and mixed X/news analysis output
+- then move into Week 8 Azure deployment preparation

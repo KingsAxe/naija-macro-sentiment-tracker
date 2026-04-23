@@ -1,6 +1,7 @@
 import { DashboardControls } from "@/components/dashboard-controls";
 import { IngestionQualityBoard } from "@/components/ingestion-quality-board";
 import { LiveFeed } from "@/components/live-feed";
+import { SourcePerformancePanel } from "@/components/source-performance-panel";
 import {
   getFeed,
   getIngestionRuns,
@@ -47,6 +48,7 @@ export default async function OperationsPage({ searchParams }: OperationsPagePro
           </p>
         </section>
 
+        <SourcePerformancePanel runs={runs} />
         <DashboardControls topics={topics} sentiments={sentiments} />
         <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
           <IngestionQualityBoard runs={runs} />

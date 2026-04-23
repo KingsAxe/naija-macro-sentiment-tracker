@@ -6,8 +6,8 @@ import { getSchedulerStatus } from "@/lib/api";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Naija Sentiment Tracker",
-  description: "Dashboard for macroeconomic sentiment around the Nigerian economy.",
+  title: "Naija Macro Monitor",
+  description: "Cloud-hosted Azure sentiment intelligence for Nigeria macroeconomic signals.",
 };
 
 export default async function RootLayout({

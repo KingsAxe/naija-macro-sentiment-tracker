@@ -25,11 +25,11 @@ export default async function HomePage() {
           <div className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
             <div>
               <h1 className="max-w-3xl text-4xl font-semibold tracking-tight md:text-6xl">
-                Public mood tracking for the Nigerian economy, built for local-first analysis.
+                Cloud-hosted macro sentiment intelligence for the Nigerian economy.
               </h1>
               <p className="mt-4 max-w-2xl text-base text-neutral-300 md:text-lg">
-                Azure-backed sentiment analysis, tracked ingestion runs, and live macro feed views
-                from local and news sources.
+                Premium Azure-backed analysis, tracked ingestion operations, and live macro signal
+                views across X and news sources.
               </p>
             </div>
             <ControlPanel summary={summary} />

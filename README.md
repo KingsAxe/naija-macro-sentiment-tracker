@@ -1,6 +1,6 @@
 # Naija Macro Sentiment Tracker
 
-Local-first macroeconomic sentiment tracker for public discussion about the Nigerian economy. The current system ingests manually collected X data, stores it in PostgreSQL, analyzes sentiment and opinion targets with Azure AI Language, exposes FastAPI endpoints, and renders a live Next.js dashboard.
+Cloud-hosted macroeconomic sentiment intelligence platform for public discussion about the Nigerian economy. The current system ingests manually collected X data plus curated news sources, stores it in PostgreSQL, analyzes sentiment and opinion targets with Azure AI Language, exposes FastAPI endpoints, and renders a live Next.js dashboard.
 
 ## Current Capabilities
 
