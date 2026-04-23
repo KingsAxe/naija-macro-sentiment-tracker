@@ -5,18 +5,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#081019",
-        panel: "#101b27",
-        signal: "#6ee7b7",
+        ink: "#061126",
+        panel: "#0b1b33",
+        primary: "#0b3a78",
+        primaryBright: "#2563eb",
+        signal: "#2dd4bf",
         warning: "#f59e0b",
         danger: "#fb7185",
-        accent: "#7dd3fc",
+        accent: "#93c5fd",
       },
       fontFamily: {
         sans: ["Space Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        panel: "0 20px 60px rgba(0, 0, 0, 0.35)",
+        panel: "0 24px 70px rgba(2, 12, 32, 0.42)",
       },
     },
   },

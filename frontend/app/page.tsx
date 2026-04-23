@@ -17,7 +17,8 @@ export default async function HomePage() {
   return (
     <main className="min-h-screen px-6 py-10 md:px-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <section className="rounded-[2rem] border border-white/10 bg-white/5 px-6 py-8 shadow-panel backdrop-blur">
+        <section className="relative overflow-hidden rounded-[2rem] border border-blue-200/15 bg-gradient-to-br from-primary/55 via-panel to-slate-950/80 px-6 py-8 shadow-panel backdrop-blur">
+          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-400/10 blur-3xl" />
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-accent">Naija Macro Monitor</p>
           <div className="grid gap-6 lg:grid-cols-[1.6fr_0.9fr]">
             <div>
