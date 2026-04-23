@@ -142,6 +142,9 @@ Prepare the local system for a clean Azure transition.
 - Define production environment variables and deployment settings.
 - Choose final Azure hosting targets for backend and frontend.
 - Prepare PostgreSQL connection settings for Azure Flexible Server.
+- Define the public read-only dashboard surface for hosted users.
+- Define admin authentication and authorization boundaries for hosted operations.
+- Decide which routes and UI controls remain public read-only and which require signed-in operator access.
 - Review CORS, startup commands, and logging settings for production.
 - Identify which local scheduler behavior should remain in the API and which should later become a dedicated Azure job.
 
@@ -158,6 +161,8 @@ Deploy the system and validate production behavior in Azure.
 - Provision Azure PostgreSQL, Azure AI Language access, backend hosting, and frontend hosting.
 - Deploy the backend and connect it to Azure PostgreSQL.
 - Deploy the frontend and configure it against the deployed API.
+- Implement and validate hosted admin protection for ingestion, uploads, and scheduler controls.
+- Confirm public users can still open and browse the dashboard without signing in.
 - Run at least one complete cloud ingestion and dashboard validation cycle.
 - Document deployment issues, fixes, and final working URLs.
 

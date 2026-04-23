@@ -152,6 +152,8 @@ The project should be built in four major stages:
 - deployment configuration for backend and frontend
 - PostgreSQL connection configuration for Azure
 - CORS updates for deployed frontend URL
+- public read-only dashboard scope
+- admin-only scope for uploads, ingestion, and scheduler control
 - production-safe logging and startup settings
 
 ## Phase 8: Azure Deployment and Cloud Testing
@@ -166,6 +168,8 @@ The project should be built in four major stages:
 - backend can connect to Azure PostgreSQL
 - backend can call Azure AI Language with production credentials
 - API endpoints work from deployed frontend
+- public users can view the dashboard without signing in
+- admin-only actions are blocked for unauthenticated users and allowed for approved operators
 - ingestion can be manually triggered in the cloud
 - at least one complete end-to-end cloud test run is documented
 

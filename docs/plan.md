@@ -81,6 +81,8 @@ The project is ready for Azure deployment when all of the following are true:
 - API endpoints return stable, frontend-ready responses
 - Frontend renders charts, feed data, loading states, and empty states correctly
 - Manual ingestion can be triggered from the UI
+- Public users can browse the hosted dashboard without signing in
+- Hosted operator actions such as ingestion and scheduler control are protected by authentication and authorization
 
 ## Planning Reference
 Execution order, weekly milestones, and deployment checkpoints are defined in:
