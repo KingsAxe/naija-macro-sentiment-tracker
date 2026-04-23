@@ -1,29 +1,37 @@
 # Backend
 
-FastAPI application, SQLAlchemy models, and ETL services for the Naija Sentiment Tracker.
+FastAPI, SQLAlchemy, Alembic, ETL, and Azure AI Language integration for the Naija Macro Sentiment Tracker.
 
-## Run
+## Run API
 
 ```powershell
-uvicorn app.main:app --reload
+..\nst\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-## Run The File-Based ETL
+## Run Migrations
+
+```powershell
+..\nst\Scripts\python.exe -m alembic -c alembic.ini upgrade head
+```
+
+## Run ETL
+
+Ingest and analyze:
 
 ```powershell
 ..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv
 ```
 
-If Azure AI Language credentials are configured, the runner will ingest pending file records and then analyze any raw texts that do not yet have sentiment results.
-
-Use this variant to ingest data without calling Azure AI:
+Ingest only:
 
 ```powershell
 ..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv --skip-analysis
 ```
 
-## Planned Next Steps
+## Test
 
-- add Alembic migrations
-- integrate Azure AI Language sentiment analysis
-- add PostgreSQL-specific local configuration
+From the repository root:
+
+```powershell
+.\nst\Scripts\python.exe -m pytest backend\tests -q --basetemp=backend\.pytest_tmp -p no:cacheprovider
+```

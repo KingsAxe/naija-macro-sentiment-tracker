@@ -1,53 +1,147 @@
-# Naija Sentiment Tracker
+# Naija Macro Sentiment Tracker
 
-Local-first macro-sentiment analysis platform focused on public discussion about the Nigerian economy.
+Local-first macroeconomic sentiment tracker for public discussion about the Nigerian economy. The current system ingests manually collected X data, stores it in PostgreSQL, analyzes sentiment and opinion targets with Azure AI Language, exposes FastAPI endpoints, and renders a live Next.js dashboard.
 
-## Workspace Layout
+## Current Capabilities
 
-- `backend/`: FastAPI API, database models, ETL services, and migrations.
-- `frontend/`: Next.js dashboard shell for visualizing sentiment trends.
-- `docs/`: delivery plan, execution notes, and weekly milestones.
+- File-based ingestion for manual X datasets in CSV/XLSX form.
+- Cleaning and EDA audit notebook at `backend/data/01_data_cleaning_eda.ipynb`.
+- Production ETL runner with validation, deduplication, logging, and PostgreSQL writes.
+- SQLAlchemy models and Alembic migrations for:
+  - raw text
+  - document sentiment
+  - opinion targets
+  - opinion assessments
+- Azure AI Language sentiment analysis with opinion mining.
+- FastAPI endpoints for summary, targets, assessments, feed, and ingestion trigger.
+- Next.js dashboard wired to live backend data.
 
-## Local Development
+## Repository Layout
 
-### Backend
+- `backend/`: FastAPI app, ETL runner, SQLAlchemy models, Alembic migrations, tests, and data files.
+- `frontend/`: Next.js dashboard.
+- `docs/`: planning docs, project log, and manual data contract.
+- `nst/`: local Python virtual environment used for this project. It is ignored by Git.
 
-1. Create a virtual environment inside `backend/.venv`.
-2. Install dependencies:
+## Environment Files
+
+Backend:
 
 ```powershell
-pip install -e .[dev]
+Copy-Item backend\.env.example backend\.env
 ```
 
-3. Copy `.env.example` to `.env`.
-4. Run the API:
+Then fill `backend/.env` with local PostgreSQL and Azure AI Language values.
+
+Frontend:
 
 ```powershell
-uvicorn app.main:app --reload
+Copy-Item frontend\.env.example frontend\.env.local
 ```
 
-### Frontend
+Default frontend API target:
 
-1. Install dependencies:
+```text
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
+```
+
+## Backend Setup
+
+From the repository root:
 
 ```powershell
+.\nst\Scripts\python.exe -m pip install -e .\backend[dev]
+```
+
+Apply database migrations:
+
+```powershell
+cd backend
+..\nst\Scripts\python.exe -m alembic -c alembic.ini upgrade head
+```
+
+Run the backend API:
+
+```powershell
+cd backend
+..\nst\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Useful backend URLs:
+
+- `http://127.0.0.1:8000/`
+- `http://127.0.0.1:8000/docs`
+- `http://127.0.0.1:8000/api/health`
+- `http://127.0.0.1:8000/api/sentiment/summary`
+- `http://127.0.0.1:8000/api/sentiment/targets`
+- `http://127.0.0.1:8000/api/sentiment/assessments`
+- `http://127.0.0.1:8000/api/feed`
+
+## ETL And Analysis
+
+Run file ingestion plus Azure AI sentiment analysis:
+
+```powershell
+cd backend
+..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv
+```
+
+Run ingestion only, without Azure calls:
+
+```powershell
+cd backend
+..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv --skip-analysis
+```
+
+The current manual X dataset uses the contract documented at `docs/manual-x-data-contract.md`.
+
+## Frontend Setup
+
+From the frontend directory:
+
+```powershell
+cd frontend
 npm install
-```
-
-2. Copy `.env.example` to `.env.local`.
-3. Run the dashboard:
-
-```powershell
 npm run dev
 ```
 
-## Current Status
+Open:
 
-The repository currently includes:
+```text
+http://localhost:3000
+```
 
-- backend application scaffold
-- SQLAlchemy domain models and session setup
-- starter API routes for health, summary, targets, feed, and manual ingest trigger
-- Next.js dashboard shell with chart, feed, and control panel placeholders
+Build check:
 
-The ETL pipeline, migrations, and Azure AI integration are still to be implemented.
+```powershell
+cd frontend
+npm run build
+```
+
+## Verification
+
+Backend tests:
+
+```powershell
+.\nst\Scripts\python.exe -m pytest backend\tests -q --basetemp=backend\.pytest_tmp -p no:cacheprovider
+```
+
+Frontend production build:
+
+```powershell
+cd frontend
+npm run build
+```
+
+Current verified local database state after Azure analysis:
+
+- `raw_texts`: 40
+- `analyzed_sentiments`: 40
+- `opinion_targets`: 11
+- `opinion_assessments`: 11
+
+## Next Work
+
+- Visually QA the dashboard against the live backend API.
+- Refine dashboard layout and loading/error states.
+- Add Vanguard and Punch scraping after the current file-based and Azure analysis path remains stable.
