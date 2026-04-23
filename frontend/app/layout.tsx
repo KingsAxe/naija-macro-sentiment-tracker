@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 
+import { AppTopBar } from "@/components/app-top-bar";
+import { getSchedulerStatus } from "@/lib/api";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,12 +10,17 @@ export const metadata: Metadata = {
   description: "Dashboard for macroeconomic sentiment around the Nigerian economy.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const scheduler = await getSchedulerStatus();
+
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppTopBar scheduler={scheduler} />
+        {children}
+      </body>
     </html>
   );
 }

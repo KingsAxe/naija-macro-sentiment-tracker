@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type DashboardControlsProps = {
   topics: string[];
@@ -8,6 +8,7 @@ type DashboardControlsProps = {
 };
 
 export function DashboardControls({ topics, sentiments }: DashboardControlsProps) {
+  const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTopic = searchParams.get("topic") ?? "";
@@ -20,11 +21,11 @@ export function DashboardControls({ topics, sentiments }: DashboardControlsProps
     } else {
       params.delete(key);
     }
-    router.push(params.toString() ? `/?${params.toString()}` : "/");
+    router.push(params.toString() ? `${pathname}?${params.toString()}` : pathname);
   }
 
   function clearFilters() {
-    router.push("/");
+    router.push(pathname);
   }
 
   return (

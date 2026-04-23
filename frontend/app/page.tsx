@@ -1,54 +1,23 @@
 import { ControlPanel } from "@/components/control-panel";
-import { DashboardControls } from "@/components/dashboard-controls";
-import { IngestionQualityBoard } from "@/components/ingestion-quality-board";
-import { LiveFeed } from "@/components/live-feed";
 import { MacroMoodChart } from "@/components/macro-mood-chart";
-import { SchedulerPanel } from "@/components/scheduler-panel";
+import { SentimentSignalPlot } from "@/components/sentiment-signal-plot";
 import { TargetHeatmap } from "@/components/target-heatmap";
 import {
   getAssessments,
-  getFeed,
-  getIngestionRuns,
-  getSchedulerStatus,
   getSentimentSummary,
   getTargets,
 } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
-
-type HomePageProps = {
-  searchParams?: Promise<{
-    topic?: string;
-    sentiment?: string;
-  }>;
-};
-
-function isPresent(value: string | null): value is string {
-  return Boolean(value);
-}
-
-export default async function HomePage({ searchParams }: HomePageProps) {
-  const filters = (await searchParams) ?? {};
-  const [summary, targets, assessments, feed, runs, scheduler] = await Promise.all([
+export default async function HomePage() {
+  const [summary, targets, assessments] = await Promise.all([
     getSentimentSummary(),
     getTargets(),
     getAssessments(),
-    getFeed(),
-    getIngestionRuns(),
-    getSchedulerStatus(),
   ]);
-  const topics = Array.from(new Set(feed.map((item) => item.topic_label).filter(isPresent))).sort();
-  const sentiments = Array.from(
-    new Set(feed.map((item) => item.overall_sentiment).filter(isPresent)),
-  ).sort();
-  const filteredFeed = feed.filter((item) => {
-    const topicMatches = !filters.topic || item.topic_label === filters.topic;
-    const sentimentMatches = !filters.sentiment || item.overall_sentiment === filters.sentiment;
-    return topicMatches && sentimentMatches;
-  });
 
   return (
-    <main className="min-h-screen px-6 py-10 md:px-10">
+    <main className="min-h-screen px-6 py-8 md:px-10">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
         <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-primary via-panel to-black px-6 py-8 shadow-panel backdrop-blur">
           <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-white/5 blur-3xl" />
@@ -67,15 +36,32 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <SentimentSignalPlot summary={summary} />
           <MacroMoodChart summary={summary} />
-          <TargetHeatmap targets={targets} assessments={assessments} />
         </section>
 
-        <SchedulerPanel scheduler={scheduler} />
-        <IngestionQualityBoard runs={runs} />
-        <DashboardControls topics={topics} sentiments={sentiments} />
-        <LiveFeed items={filteredFeed} totalItems={feed.length} />
+        <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <TargetHeatmap targets={targets} assessments={assessments} />
+          <section className="rounded-[1.75rem] border border-white/10 bg-panel/95 p-6 shadow-panel">
+            <p className="text-xs uppercase tracking-[0.28em] text-neutral-500">Reading Guide</p>
+            <h2 className="mt-2 text-2xl font-semibold">How to Read the Analysis</h2>
+            <div className="mt-6 grid gap-3 text-sm text-neutral-300">
+              <article className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                Positive means the language around the economy is constructive or improving.
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                Neutral captures informational reporting without a strong directional tone.
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                Negative reflects concern, pressure, or dissatisfaction in the source language.
+              </article>
+              <article className="rounded-2xl border border-white/10 bg-black/20 p-4 text-neutral-400">
+                Use the Operations page for source runs, feed inspection, and scheduler behavior.
+              </article>
+            </div>
+          </section>
+        </section>
       </div>
     </main>
   );

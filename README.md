@@ -17,7 +17,7 @@ Local-first macroeconomic sentiment tracker for public discussion about the Nige
   - opinion assessments
 - Azure AI Language sentiment analysis with opinion mining.
 - FastAPI endpoints for summary, targets, assessments, feed, ingestion runs, and scheduler control.
-- Next.js dashboard wired to live backend data.
+- Next.js dashboard split into analysis and operations views, wired to live backend data.
 
 ## Repository Layout
 
@@ -141,6 +141,13 @@ Open:
 
 ```text
 http://localhost:3000
+```
+
+Pages:
+
+```text
+http://localhost:3000/
+http://localhost:3000/operations
 ```
 
 Build check:
