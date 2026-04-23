@@ -28,6 +28,14 @@ Ingest only:
 ..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv --skip-analysis
 ```
 
+Ingest manual X data plus Vanguard/Punch business feed articles:
+
+```powershell
+..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv --include-news --news-limit 20
+```
+
+Use `--skip-news-pages` when you only want RSS titles/summaries and do not want to fetch article pages.
+
 ## Test
 
 From the repository root:

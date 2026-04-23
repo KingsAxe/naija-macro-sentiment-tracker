@@ -7,6 +7,7 @@ import sys
 from app.db.session import SessionLocal
 from app.services.analysis import analyze_pending_sentiments, azure_language_is_configured
 from app.services.ingestion import ingest_file_to_database
+from app.services.news_sources import ingest_news_sources
 
 logger = logging.getLogger("app.etl.runner")
 
@@ -31,6 +32,22 @@ def parse_args() -> argparse.Namespace:
         "--skip-analysis",
         action="store_true",
         help="Only run file ingestion and skip Azure AI sentiment analysis.",
+    )
+    parser.add_argument(
+        "--include-news",
+        action="store_true",
+        help="Also ingest macro-relevant Vanguard and Punch business feed articles.",
+    )
+    parser.add_argument(
+        "--news-limit",
+        type=int,
+        default=20,
+        help="Maximum feed items to inspect per news source when --include-news is used.",
+    )
+    parser.add_argument(
+        "--skip-news-pages",
+        action="store_true",
+        help="Use RSS title/summary only and skip fetching article pages.",
     )
     return parser.parse_args()
 
@@ -57,6 +74,22 @@ def main() -> int:
             result.ingested_count,
             result.skipped_count,
         )
+        if args.include_news:
+            news_results = ingest_news_sources(
+                session=session,
+                limit_per_source=args.news_limit,
+                fetch_pages=not args.skip_news_pages,
+                logger=logger,
+            )
+            for news_result in news_results:
+                logger.info(
+                    "News summary | source=%s | ingested=%s | skipped=%s | duplicates=%s",
+                    news_result.source_name,
+                    news_result.ingested_count,
+                    news_result.skipped_count,
+                    news_result.duplicate_count,
+                )
+
         if args.skip_analysis:
             logger.info("Sentiment analysis skipped because --skip-analysis was provided")
             return 0

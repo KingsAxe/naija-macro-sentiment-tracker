@@ -1,3 +1,15 @@
-from app.models.sentiment import AnalyzedSentiment, OpinionAssessment, OpinionTarget, RawText
+from app.models.sentiment import (
+    AnalyzedSentiment,
+    IngestionRun,
+    OpinionAssessment,
+    OpinionTarget,
+    RawText,
+)
 
-__all__ = ["AnalyzedSentiment", "OpinionAssessment", "OpinionTarget", "RawText"]
+__all__ = [
+    "AnalyzedSentiment",
+    "IngestionRun",
+    "OpinionAssessment",
+    "OpinionTarget",
+    "RawText",
+]

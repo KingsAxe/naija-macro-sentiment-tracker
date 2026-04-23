@@ -11,7 +11,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import RawText
+from app.models import IngestionRun, RawText
 from app.schemas.sentiment import IngestTriggerResponse
 
 settings = get_settings()
@@ -34,9 +34,61 @@ MANUAL_DATE_FORMATS = ("%b %d", "%m/%d/%Y")
 
 @dataclass(slots=True)
 class IngestionRunResult:
+    run_id: int
     source_file: str
+    source_name: str | None
     ingested_count: int
     skipped_count: int
+    duplicate_count: int
+
+
+def _create_ingestion_run(
+    session: Session,
+    *,
+    source_type: str,
+    source_file: str | Path | None,
+) -> IngestionRun:
+    run = IngestionRun(
+        source_type=source_type,
+        source_file=str(source_file) if source_file else None,
+        status="running",
+    )
+    session.add(run)
+    session.commit()
+    session.refresh(run)
+    return run
+
+
+def _mark_ingestion_run_completed(
+    session: Session,
+    run: IngestionRun,
+    *,
+    source_name: str | None,
+    inserted_count: int,
+    skipped_count: int,
+) -> None:
+    run.source_name = source_name
+    run.status = "completed"
+    run.inserted_count = inserted_count
+    run.skipped_count = skipped_count
+    run.duplicate_count = skipped_count
+    run.completed_at = datetime.now(tz=LAGOS_TZ)
+    session.add(run)
+    session.commit()
+
+
+def _mark_ingestion_run_failed(session: Session, run: IngestionRun, error: Exception) -> None:
+    session.rollback()
+    run.status = "failed"
+    run.error_message = str(error)
+    run.completed_at = datetime.now(tz=LAGOS_TZ)
+    session.add(run)
+    session.commit()
+
+
+def _summarize_sources(cleaned: pd.DataFrame) -> str | None:
+    source_names = sorted({value for value in cleaned["source"].dropna().tolist() if value})
+    return ", ".join(source_names) if source_names else None
 
 
 def _repair_text(value: str) -> str:
@@ -269,24 +321,58 @@ def ingest_file_to_database(
     file_path: str | None = None,
     logger: logging.Logger | None = None,
 ) -> IngestionRunResult:
-    cleaned, resolved_path = prepare_clean_records(file_path=file_path)
-    if logger:
-        logger.info("Prepared %s cleaned records from %s", len(cleaned), resolved_path)
+    resolved_path = resolve_ingestion_file(file_path)
+    run = _create_ingestion_run(session=session, source_type="file", source_file=resolved_path)
 
-    ingested_count, skipped_count = bulk_insert_clean_records(session=session, cleaned=cleaned)
-    if logger:
-        logger.info(
-            "Database write complete for %s | inserted=%s | skipped=%s",
-            resolved_path,
-            ingested_count,
-            skipped_count,
+    try:
+        cleaned, resolved_path = prepare_clean_records(file_path=str(resolved_path))
+        source_name = _summarize_sources(cleaned)
+        if logger:
+            logger.info(
+                "Prepared %s cleaned records from %s | source=%s | run_id=%s",
+                len(cleaned),
+                resolved_path,
+                source_name or "unknown",
+                run.id,
+            )
+
+        ingested_count, skipped_count = bulk_insert_clean_records(session=session, cleaned=cleaned)
+        _mark_ingestion_run_completed(
+            session=session,
+            run=run,
+            source_name=source_name,
+            inserted_count=ingested_count,
+            skipped_count=skipped_count,
         )
+        if logger:
+            logger.info(
+                "Database write complete for %s | run_id=%s | source=%s | inserted=%s | skipped=%s | duplicates=%s",
+                resolved_path,
+                run.id,
+                source_name or "unknown",
+                ingested_count,
+                skipped_count,
+                skipped_count,
+            )
 
-    return IngestionRunResult(
-        source_file=str(resolved_path),
-        ingested_count=ingested_count,
-        skipped_count=skipped_count,
-    )
+        return IngestionRunResult(
+            run_id=run.id,
+            source_file=str(resolved_path),
+            source_name=source_name,
+            ingested_count=ingested_count,
+            skipped_count=skipped_count,
+            duplicate_count=skipped_count,
+        )
+    except Exception as exc:
+        _mark_ingestion_run_failed(session=session, run=run, error=exc)
+        if logger:
+            logger.exception(
+                "Database write failed for %s | run_id=%s | error=%s",
+                resolved_path,
+                run.id,
+                exc,
+            )
+        raise
 
 
 def trigger_ingestion(session: Session) -> IngestTriggerResponse:
@@ -295,6 +381,10 @@ def trigger_ingestion(session: Session) -> IngestTriggerResponse:
     return IngestTriggerResponse(
         status="completed",
         detail="File-based ingestion finished. Sentiment analysis is not wired yet.",
+        run_id=result.run_id,
+        source_file=result.source_file,
+        source_name=result.source_name,
         ingested_count=result.ingested_count,
         skipped_count=result.skipped_count,
+        duplicate_count=result.duplicate_count,
     )

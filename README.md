@@ -6,9 +6,11 @@ Local-first macroeconomic sentiment tracker for public discussion about the Nige
 
 - File-based ingestion for manual X datasets in CSV/XLSX form.
 - Cleaning and EDA audit notebook at `backend/data/01_data_cleaning_eda.ipynb`.
-- Production ETL runner with validation, deduplication, logging, and PostgreSQL writes.
+- Production ETL runner with validation, deduplication, run tracking, logging, and PostgreSQL writes.
+- RSS-first Vanguard and Punch news ingestion for macro-relevant business articles.
 - SQLAlchemy models and Alembic migrations for:
   - raw text
+  - ingestion runs
   - document sentiment
   - opinion targets
   - opinion assessments
@@ -93,6 +95,15 @@ cd backend
 ..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv --skip-analysis
 ```
 
+Run manual X ingestion plus Vanguard/Punch news ingestion without Azure calls:
+
+```powershell
+cd backend
+..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv --include-news --news-limit 20 --skip-analysis
+```
+
+Use `--skip-news-pages` to ingest RSS titles/summaries only without fetching article pages.
+
 The current manual X dataset uses the contract documented at `docs/manual-x-data-contract.md`.
 
 ## Frontend Setup
@@ -144,4 +155,4 @@ Current verified local database state after Azure analysis:
 
 - Visually QA the dashboard against the live backend API.
 - Refine dashboard layout and loading/error states.
-- Add Vanguard and Punch scraping after the current file-based and Azure analysis path remains stable.
+- Analyze newly ingested Vanguard/Punch rows and review dashboard behavior with mixed X/news data.

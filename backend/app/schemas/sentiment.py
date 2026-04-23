@@ -42,5 +42,9 @@ class FeedResponse(BaseModel):
 class IngestTriggerResponse(BaseModel):
     status: str
     detail: str
+    run_id: int | None = None
+    source_file: str | None = None
+    source_name: str | None = None
     ingested_count: int = 0
     skipped_count: int = 0
+    duplicate_count: int = 0
