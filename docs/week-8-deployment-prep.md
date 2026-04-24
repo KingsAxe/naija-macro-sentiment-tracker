@@ -105,10 +105,12 @@ These defaults are now the working Week 8 direction unless there is an explicit 
 - Run Alembic migrations explicitly during deployment or release flow
 - Start the API with:
   - `python -m uvicorn app.main:app --host 0.0.0.0 --port 8000`
+- Deploy backend updates through GitHub Actions to Azure App Service
 
 ### Frontend Runtime
 - Build Next.js normally in the Azure Static Web Apps pipeline
 - Set `NEXT_PUBLIC_API_BASE_URL` to the deployed backend URL plus `/api`
+- Recommended first path: let Azure Static Web Apps generate the frontend GitHub Actions workflow
 
 ### Database Handling
 - Use Azure Database for PostgreSQL Flexible Server
