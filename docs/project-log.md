@@ -132,6 +132,8 @@ What exists now for Week 8 preparation:
 - production environment inventory documented
 - production-safe startup behavior now defaults away from automatic schema creation
 - scheduler default remains disabled for the first hosted rollout
+- GitHub Actions backend deployment path documented for Azure App Service
+- ordered Azure release checklist documented for Week 9 execution
 
 ## Current Milestone Assessment
 
