@@ -15,8 +15,8 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    # Keep local boot simple until Alembic-managed database setup is fully wired in.
-    Base.metadata.create_all(bind=engine)
+    if settings.auto_create_schema_on_startup:
+        Base.metadata.create_all(bind=engine)
     ingestion_scheduler.start()
     yield
     ingestion_scheduler.stop()

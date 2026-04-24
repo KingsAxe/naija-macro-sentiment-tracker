@@ -99,9 +99,21 @@ Week 5 is complete. The application now supports manual X data plus curated news
 ### Outcome
 Week 6 is complete. The system now has operational controls, tracked ingestion quality, and a production-style dashboard shell.
 
+## Week 7 Summary: Dashboard Completion and Local QA
+
+### Scope Completed
+- Split the frontend into dedicated analysis and operations pages.
+- Added a shared top bar with scheduler visibility and operational navigation.
+- Added sentiment plotting, source-performance comparison, and clearer analysis reading guidance.
+- Added dashboard-side manual ingestion triggering on the operations page.
+- Verified the frontend can call backend endpoints and refresh after operational actions.
+
+### Outcome
+Week 7 is complete. The dashboard is now a working analysis and operations surface with UI-triggered ingestion and local verification paths.
+
 ## Current Project State
 
-The project is currently in **Week 7: Dashboard Completion and Local QA**, with Week 6 completed and Week 7 now partially delivered.
+The project is currently in **Week 8: Azure Preparation**, with Week 7 completed and Week 8 now active.
 
 What exists now:
 - Azure-backed sentiment analysis and opinion mining
@@ -114,10 +126,12 @@ What exists now:
 - sentiment plotting, target/assessment views, live feed inspection, and source-performance comparison
 - backend API endpoints for summary, targets, assessments, feed, ingestion runs, and scheduler control
 
-What is still outstanding for full Week 7 completion:
-- frontend-triggered ingestion action from the dashboard
-- broader end-to-end UI validation after more production-like mixed-source data arrives
-- any additional loading/error-state refinement that appears necessary during that final QA pass
+What exists now for Week 8 preparation:
+- Azure deployment target selection documented
+- public read-only versus admin-only boundary documented
+- production environment inventory documented
+- production-safe startup behavior now defaults away from automatic schema creation
+- scheduler default remains disabled for the first hosted rollout
 
 ## Current Milestone Assessment
 
@@ -127,13 +141,14 @@ What is still outstanding for full Week 7 completion:
 - Week 4: complete
 - Week 5: complete
 - Week 6: complete
-- Week 7: in progress
+- Week 7: complete
+- Week 8: in progress
 
 ## Next Planned Phase
 
-The active planned phase is **Week 7: Dashboard Completion and Local QA**.
+The active planned phase is **Week 8: Azure Preparation**.
 
 Next likely work:
-- decide whether dashboard-triggered ingestion is required before Azure deployment work begins
-- continue local QA with scheduled refreshes and mixed X/news analysis output
-- then move into Week 8 Azure deployment preparation
+- finalize the exact Azure service configuration using the chosen defaults
+- prepare deployment-specific environment values for backend and frontend
+- define how admin-only actions will be protected while keeping the dashboard public

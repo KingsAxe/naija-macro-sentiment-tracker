@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     ingest_batch_size: int = 10
     csv_source_path: str = "./data/raw_macro_data.csv"
     frontend_origin: str = "http://localhost:3000"
+    auto_create_schema_on_startup: bool = False
     scheduler_enabled: bool = False
     scheduler_daily_hour: int = 6
     scheduler_include_news: bool = True

@@ -90,3 +90,4 @@ Execution order, weekly milestones, and deployment checkpoints are defined in:
 - [implementation-guide.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/implementation-guide.md)
 - [ideas-for-steps.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/ideas-for-steps.md)
 - [weekly-guide.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/weekly-guide.md)
+- [week-8-deployment-prep.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/week-8-deployment-prep.md)
