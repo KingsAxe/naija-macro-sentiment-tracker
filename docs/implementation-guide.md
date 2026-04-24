@@ -179,3 +179,6 @@ Use these documents together:
 - `plan.md` for scope and architecture
 - `ideas-for-steps.md` for build order
 - `weekly-guide.md` for milestone tracking and pacing
+- `week-8-deployment-prep.md` for Week 8 hosting defaults
+- `production-env-checklist.md` for hosted configuration inventory
+- `azure-release-runbook.md` for first deployment execution

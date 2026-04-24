@@ -185,3 +185,4 @@ Current verified local database state after Azure analysis:
 - Analyze newly ingested Vanguard/Punch rows and review dashboard behavior with mixed X/news data.
 - Add deeper UI drill-down only if it helps explain the analysis better.
 - Use [docs/week-8-deployment-prep.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/week-8-deployment-prep.md) as the Week 8 deployment prep reference.
+- Use [docs/production-env-checklist.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/production-env-checklist.md) and [docs/azure-release-runbook.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/azure-release-runbook.md) for Week 8 and Week 9 deployment execution.
