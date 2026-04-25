@@ -179,6 +179,28 @@ Current verified local database state after Azure analysis:
 - `opinion_targets`: 11
 - `opinion_assessments`: 11
 
+## Hosted Deployment
+
+Current Azure deployment targets:
+
+- Frontend: `https://thankful-beach-07fb02e0f.7.azurestaticapps.net`
+- Backend: `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net`
+
+Intended backend health and API endpoints:
+
+- `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net/`
+- `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net/api/health`
+- `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net/api/sentiment/summary`
+
+Current cloud verification status on April 25, 2026:
+
+- frontend root responds successfully
+- frontend `/operations` responds successfully
+- backend App Service is reachable, but is still serving the default Azure App Service welcome page
+- backend FastAPI routes such as `/api/health` and `/api/sentiment/summary` are returning `404`
+
+This means the frontend deployment is live, but the backend runtime is not yet serving the application code correctly. The next deployment fix should focus on Azure App Service startup/runtime configuration before cloud API validation can be marked complete.
+
 ## Next Work
 
 - Review ingestion-run QA summaries against live news refreshes.
@@ -187,3 +209,4 @@ Current verified local database state after Azure analysis:
 - Use [docs/week-8-deployment-prep.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/week-8-deployment-prep.md) as the Week 8 deployment prep reference.
 - Use [docs/production-env-checklist.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/production-env-checklist.md) and [docs/azure-release-runbook.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/azure-release-runbook.md) for Week 8 and Week 9 deployment execution.
 - Use [docs/github-actions-setup.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/github-actions-setup.md) for the GitHub Actions deployment setup path.
+- Fix Azure App Service backend startup/runtime so hosted FastAPI routes respond instead of the default Azure landing page.
