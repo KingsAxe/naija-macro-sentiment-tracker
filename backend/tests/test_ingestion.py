@@ -3,7 +3,12 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from app.services.ingestion import clean_raw_dataset, load_raw_dataset, prepare_clean_records
+from app.services.ingestion import (
+    BACKEND_ROOT,
+    clean_raw_dataset,
+    load_raw_dataset,
+    prepare_clean_records,
+)
 
 
 def test_clean_raw_dataset_fills_missing_dates_and_strips_text() -> None:
@@ -29,7 +34,7 @@ def test_clean_raw_dataset_fills_missing_dates_and_strips_text() -> None:
 def test_prepare_clean_records_uses_manual_x_dataset() -> None:
     cleaned, resolved_path = prepare_clean_records("data/raw_macro_data.csv")
 
-    assert resolved_path == Path("C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/backend/data/raw_macro_data.csv")
+    assert resolved_path == (BACKEND_ROOT / "data/raw_macro_data.csv").resolve()
     assert not cleaned.empty
     assert set(["source", "topic_label", "content", "published_at", "source_url"]).issubset(
         cleaned.columns
