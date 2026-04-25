@@ -188,13 +188,6 @@ Current verified local database state after Azure analysis:
 Current Azure deployment targets:
 
 - Frontend: [https://thankful-beach-07fb02e0f.7.azurestaticapps.net](https://thankful-beach-07fb02e0f.7.azurestaticapps.net)
-- Backend: `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net`
-
-Backend health and API endpoints:
-
-- `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net/`
-- `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net/api/health`
-- `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net/api/sentiment/summary`
 
 Current cloud verification status on April 25, 2026:
 
