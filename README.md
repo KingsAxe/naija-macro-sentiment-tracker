@@ -4,7 +4,7 @@ Cloud-hosted macroeconomic sentiment intelligence platform for public discussion
 
 Live frontend:
 
-- `https://thankful-beach-07fb02e0f.7.azurestaticapps.net`
+- [https://thankful-beach-07fb02e0f.7.azurestaticapps.net](https://thankful-beach-07fb02e0f.7.azurestaticapps.net)
 
 ## Current Capabilities
 
@@ -187,7 +187,7 @@ Current verified local database state after Azure analysis:
 
 Current Azure deployment targets:
 
-- Frontend: `https://thankful-beach-07fb02e0f.7.azurestaticapps.net`
+- Frontend: [https://thankful-beach-07fb02e0f.7.azurestaticapps.net](https://thankful-beach-07fb02e0f.7.azurestaticapps.net)
 - Backend: `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net`
 
 Backend health and API endpoints:
