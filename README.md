@@ -2,6 +2,10 @@
 
 Cloud-hosted macroeconomic sentiment intelligence platform for public discussion about the Nigerian economy. The current system ingests manually collected X data plus curated news sources, stores it in PostgreSQL, analyzes sentiment and opinion targets with Azure AI Language, exposes FastAPI endpoints, and renders a live Next.js dashboard.
 
+Live frontend:
+
+- `https://thankful-beach-07fb02e0f.7.azurestaticapps.net`
+
 ## Current Capabilities
 
 - File-based ingestion for manual X datasets in CSV/XLSX form.
@@ -186,7 +190,7 @@ Current Azure deployment targets:
 - Frontend: `https://thankful-beach-07fb02e0f.7.azurestaticapps.net`
 - Backend: `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net`
 
-Intended backend health and API endpoints:
+Backend health and API endpoints:
 
 - `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net/`
 - `https://kingsley-api-ezfneafjdvbyeedx.westeurope-01.azurewebsites.net/api/health`
@@ -196,10 +200,10 @@ Current cloud verification status on April 25, 2026:
 
 - frontend root responds successfully
 - frontend `/operations` responds successfully
-- backend App Service is reachable, but is still serving the default Azure App Service welcome page
-- backend FastAPI routes such as `/api/health` and `/api/sentiment/summary` are returning `404`
+- backend deployment is still being finalized
+- backend runtime verification remains in progress
 
-This means the frontend deployment is live, but the backend runtime is not yet serving the application code correctly. The next deployment fix should focus on Azure App Service startup/runtime configuration before cloud API validation can be marked complete.
+The frontend deployment is live. Backend deployment work is still in progress while Azure App Service authentication and runtime configuration are being finalized.
 
 ## Next Work
 
