@@ -6,6 +6,9 @@ __pycache__/
 .env
 .env.local
 .env.*
+!.env.example
+!backend/.env.example
+!frontend/.env.example
 backend/.env
 frontend/.env.local
 backend/.pytest_tmp/
