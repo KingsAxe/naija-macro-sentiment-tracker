@@ -111,9 +111,23 @@ Week 6 is complete. The system now has operational controls, tracked ingestion q
 ### Outcome
 Week 7 is complete. The dashboard is now a working analysis and operations surface with UI-triggered ingestion and local verification paths.
 
+## Week 9 Summary: Azure Deployment And Debugging
+
+### Scope Completed
+- Connected Azure Static Web Apps to the repository and corrected the generated frontend workflow for the monorepo structure.
+- Added the frontend build-time API base URL wiring for the hosted deployment flow.
+- Configured Azure App Service startup behavior for the FastAPI backend.
+- Diagnosed the missing dependency install issue in Azure App Service and documented the required Oryx build settings.
+- Fixed a CI-only backend test failure caused by a hardcoded local Windows path.
+- Isolated the Azure login deployment failure to a missing RBAC role assignment on the GitHub Actions service principal.
+- Confirmed the backend deployment workflow succeeded after the correct Azure role assignment was applied.
+
+### Outcome
+Week 9 deployment work is active and materially advanced. The frontend is live in Azure, the backend deployment path is unblocked, and the remaining work is final hosted runtime verification.
+
 ## Current Project State
 
-The project is currently in **Week 8: Azure Preparation**, with Week 7 completed and Week 8 now active.
+The project is currently in **Week 9: Azure Deployment And Cloud Validation**.
 
 What exists now:
 - Azure-backed sentiment analysis and opinion mining
@@ -126,14 +140,14 @@ What exists now:
 - sentiment plotting, target/assessment views, live feed inspection, and source-performance comparison
 - backend API endpoints for summary, targets, assessments, feed, ingestion runs, and scheduler control
 
-What exists now for Week 8 preparation:
+What exists now for Week 9 deployment:
 - Azure deployment target selection documented
-- public read-only versus admin-only boundary documented
 - production environment inventory documented
-- production-safe startup behavior now defaults away from automatic schema creation
-- scheduler default remains disabled for the first hosted rollout
 - GitHub Actions backend deployment path documented for Azure App Service
-- ordered Azure release checklist documented for Week 9 execution
+- Azure Static Web Apps workflow connected and corrected for the frontend monorepo path
+- deployed frontend URL published in the README
+- deployment debugging notes documented in `docs/week-9-deployment-notes.md`
+- Azure role-assignment root cause identified and resolved for GitHub Actions backend deployment
 
 ## Current Milestone Assessment
 
@@ -144,13 +158,15 @@ What exists now for Week 8 preparation:
 - Week 5: complete
 - Week 6: complete
 - Week 7: complete
-- Week 8: in progress
+- Week 8: complete
+- Week 9: in progress
 
 ## Next Planned Phase
 
-The active planned phase is **Week 8: Azure Preparation**.
+The active planned phase is **Week 9: Azure Deployment And Cloud Validation**.
 
 Next likely work:
-- finalize the exact Azure service configuration using the chosen defaults
-- prepare deployment-specific environment values for backend and frontend
-- define how admin-only actions will be protected while keeping the dashboard public
+- verify hosted backend route health
+- verify frontend-to-backend integration with real deployed API responses
+- run the first complete cloud validation cycle
+- decide how hosted admin actions should be protected before exposing write operations publicly
