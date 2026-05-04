@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
-import { AppTopBar } from "@/components/app-top-bar";
-import { getSchedulerStatus } from "@/lib/api";
+import { AppTopBarClient } from "@/components/app-top-bar-client";
 
 import "./globals.css";
 
@@ -13,12 +12,10 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const scheduler = await getSchedulerStatus();
-
   return (
     <html lang="en">
       <body>
-        <AppTopBar scheduler={scheduler} />
+        <AppTopBarClient />
         {children}
       </body>
     </html>

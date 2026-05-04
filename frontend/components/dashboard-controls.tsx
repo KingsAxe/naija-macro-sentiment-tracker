@@ -1,32 +1,28 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type DashboardControlsProps = {
   topics: string[];
   sentiments: string[];
+  activeTopic: string;
+  activeSentiment: string;
+  onTopicChange: (value: string) => void;
+  onSentimentChange: (value: string) => void;
+  onClear: () => void;
+  onRefresh?: () => void;
 };
 
-export function DashboardControls({ topics, sentiments }: DashboardControlsProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const activeTopic = searchParams.get("topic") ?? "";
-  const activeSentiment = searchParams.get("sentiment") ?? "";
-
-  function updateFilter(key: "topic" | "sentiment", value: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (value) {
-      params.set(key, value);
-    } else {
-      params.delete(key);
-    }
-    router.push(params.toString() ? `${pathname}?${params.toString()}` : pathname);
-  }
-
-  function clearFilters() {
-    router.push(pathname);
-  }
+export function DashboardControls({
+  topics,
+  sentiments,
+  activeTopic,
+  activeSentiment,
+  onTopicChange,
+  onSentimentChange,
+  onClear,
+  onRefresh,
+}: DashboardControlsProps) {
 
   return (
     <section className="rounded-[1.75rem] border border-white/10 bg-panel/95 p-5 shadow-panel">
@@ -41,7 +37,7 @@ export function DashboardControls({ topics, sentiments }: DashboardControlsProps
             <select
               className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-neutral-100 outline-none ring-white/20 focus:ring-2"
               value={activeTopic}
-              onChange={(event) => updateFilter("topic", event.target.value)}
+              onChange={(event) => onTopicChange(event.target.value)}
             >
               <option value="">All topics</option>
               {topics.map((topic) => (
@@ -56,7 +52,7 @@ export function DashboardControls({ topics, sentiments }: DashboardControlsProps
             <select
               className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-neutral-100 outline-none ring-white/20 focus:ring-2"
               value={activeSentiment}
-              onChange={(event) => updateFilter("sentiment", event.target.value)}
+              onChange={(event) => onSentimentChange(event.target.value)}
             >
               <option value="">All sentiment</option>
               {sentiments.map((sentiment) => (
@@ -69,14 +65,14 @@ export function DashboardControls({ topics, sentiments }: DashboardControlsProps
           <button
             className="rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:bg-white/10"
             type="button"
-            onClick={clearFilters}
+            onClick={onClear}
           >
             Clear
           </button>
           <button
             className="rounded-xl bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-neutral-200"
             type="button"
-            onClick={() => router.refresh()}
+            onClick={() => onRefresh?.()}
           >
             Refresh
           </button>
