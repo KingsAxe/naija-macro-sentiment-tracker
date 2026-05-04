@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import type { SchedulerStatus } from "@/lib/api";
 
 type AppTopBarProps = {
   scheduler: SchedulerStatus;
+  onSchedulerChange?: () => Promise<void> | void;
 };
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api";
@@ -23,9 +24,8 @@ function formatTimestamp(value: string | null): string {
   }).format(new Date(value));
 }
 
-export function AppTopBar({ scheduler }: AppTopBarProps) {
+export function AppTopBar({ scheduler, onSchedulerChange }: AppTopBarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +45,7 @@ export function AppTopBar({ scheduler }: AppTopBarProps) {
         throw new Error("Scheduler toggle failed");
       }
 
-      router.refresh();
+      await onSchedulerChange?.();
     } catch {
       setError("Scheduler toggle failed.");
     } finally {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api";
 
@@ -16,8 +15,11 @@ type TriggerResponse = {
   rejected_count: number;
 };
 
-export function ManualIngestionPanel() {
-  const router = useRouter();
+type ManualIngestionPanelProps = {
+  onComplete?: () => Promise<void> | void;
+};
+
+export function ManualIngestionPanel({ onComplete }: ManualIngestionPanelProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<TriggerResponse | null>(null);
@@ -36,7 +38,7 @@ export function ManualIngestionPanel() {
 
       const payload = (await response.json()) as TriggerResponse;
       setResult(payload);
-      router.refresh();
+      await onComplete?.();
     } catch {
       setError("Could not trigger ingestion.");
     } finally {
