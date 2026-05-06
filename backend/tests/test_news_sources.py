@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
+import pytest
 
 from app.db.base import Base
 from app.services.news_sources import (
@@ -53,6 +54,25 @@ def test_article_extraction_and_topic_classification() -> None:
 
     assert "Petrol prices" in text
     assert classify_macro_topic(text) == "Fuel Price"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected_topic"),
+    [
+        ("MPC members signalled tighter monetary policy after the meeting.", "Monetary Policy"),
+        ("Banks raised lending rates as borrowing costs climbed for manufacturers.", "Interest Rates"),
+        ("Consumer prices worsened the cost of living for many households.", "Cost of Living"),
+        ("Electricity tariff changes are hitting the power sector.", "Power/Energy"),
+        ("Import duty changes raised port charges for traders.", "Trade/Imports"),
+        ("Credit to private sector slowed as bank lending conditions tightened.", "Banking/Credit"),
+        ("Tax revenue shortfalls widened the budget deficit.", "Budget/Fiscal Policy"),
+        ("Haulage and logistics costs increased across key trade routes.", "Transport/Logistics"),
+        ("Workers union leaders renewed calls over unemployment and wages.", "Employment/Labour"),
+        ("Private sector confidence dipped as PMI data weakened.", "Business Confidence/Private Sector"),
+    ],
+)
+def test_classify_macro_topic_supports_expanded_taxonomy(text: str, expected_topic: str) -> None:
+    assert classify_macro_topic(text) == expected_topic
 
 
 def test_validate_news_articles_reports_rejections() -> None:

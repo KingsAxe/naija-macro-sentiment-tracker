@@ -28,7 +28,21 @@ REQUIRED_COLUMNS = {
 }
 REQUIRED_NON_EMPTY_COLUMNS = {"source", "topic_label", "text_content"}
 ALLOWED_SOURCE_VALUES = {"x"}
-ALLOWED_TOPIC_LABELS = {"FX Rate", "Food Inflation", "Fuel Price"}
+ALLOWED_TOPIC_LABELS = {
+    "FX Rate",
+    "Food Inflation",
+    "Fuel Price",
+    "Monetary Policy",
+    "Interest Rates",
+    "Cost of Living",
+    "Power/Energy",
+    "Trade/Imports",
+    "Banking/Credit",
+    "Budget/Fiscal Policy",
+    "Transport/Logistics",
+    "Employment/Labour",
+    "Business Confidence/Private Sector",
+}
 LAGOS_TZ = ZoneInfo("Africa/Lagos")
 MANUAL_DATE_FORMATS = ("%b %d", "%m/%d/%Y")
 
