@@ -1,3 +1,4 @@
+from urllib.error import URLError
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 import pytest
@@ -121,6 +122,74 @@ def test_validate_news_articles_reports_rejections() -> None:
             "url": "https://example.com/a",
             "rejection_reason": "duplicate_url",
         },
+    ]
+
+
+def test_validate_news_articles_reclassifies_unmatched_item_with_page_text(monkeypatch) -> None:
+    candidates = [
+        NewsSource(source="vanguard", feed_url="https://example.com/feed"),
+    ]
+    feed_xml = """<?xml version="1.0"?>
+    <rss><channel>
+      <item>
+        <title>Business desk update</title>
+        <link>https://example.com/energy-story</link>
+        <description>Markets are watching incoming data.</description>
+      </item>
+    </channel></rss>
+    """
+
+    def fake_fetch_url(url: str) -> str:
+        assert url == "https://example.com/energy-story"
+        return """
+        <html><body>
+          <p>Electricity tariff changes continue to pressure the power sector and energy-intensive factories.</p>
+        </body></html>
+        """
+
+    monkeypatch.setattr("app.services.news_sources.fetch_url", fake_fetch_url)
+
+    parsed = parse_feed_candidates(candidates[0], feed_xml)
+    accepted, report = validate_news_articles(parsed, fetch_pages=True)
+
+    assert len(accepted) == 1
+    assert accepted[0].topic_label == "Power/Energy"
+    assert report.missing_topic_count == 1
+    assert report.accepted_count == 1
+    assert report.rejected_samples == []
+
+
+def test_validate_news_articles_preserves_safe_fallback_when_page_fetch_fails(monkeypatch) -> None:
+    candidates = [
+        NewsSource(source="punch", feed_url="https://example.com/feed"),
+    ]
+    feed_xml = """<?xml version="1.0"?>
+    <rss><channel>
+      <item>
+        <title>Business desk update</title>
+        <link>https://example.com/unmatched-story</link>
+        <description>Markets are watching incoming data.</description>
+      </item>
+    </channel></rss>
+    """
+
+    def failing_fetch_url(url: str) -> str:
+        raise URLError("network unavailable")
+
+    monkeypatch.setattr("app.services.news_sources.fetch_url", failing_fetch_url)
+
+    parsed = parse_feed_candidates(candidates[0], feed_xml)
+    accepted, report = validate_news_articles(parsed, fetch_pages=True)
+
+    assert accepted == []
+    assert report.missing_topic_count == 1
+    assert report.rejected_samples == [
+        {
+            "title": "Business desk update",
+            "source": "punch",
+            "url": "https://example.com/unmatched-story",
+            "rejection_reason": "missing_topic_label",
+        }
     ]
 
 
