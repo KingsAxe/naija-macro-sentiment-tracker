@@ -333,6 +333,7 @@ def enrich_candidates_with_page_text(
     for candidate in candidates:
         base_content = normalize_whitespace(f"{candidate.title}. {candidate.summary}")
         content = base_content
+        topic_label = candidate.topic_label
 
         if fetch_pages:
             try:
@@ -348,8 +349,10 @@ def enrich_candidates_with_page_text(
                 page_text = ""
             if page_text:
                 content = normalize_whitespace(f"{candidate.title}. {page_text}")
+                if topic_label is None:
+                    topic_label = classify_macro_topic(content)
 
-        if candidate.topic_label is None:
+        if topic_label is None:
             continue
 
         articles.append(
@@ -359,7 +362,7 @@ def enrich_candidates_with_page_text(
                 url=candidate.url,
                 summary=candidate.summary,
                 published_at=candidate.published_at,
-                topic_label=candidate.topic_label,
+                topic_label=topic_label,
                 content=content,
             )
         )
@@ -380,9 +383,10 @@ def validate_news_articles(
     short_content_count = 0
     topic_coverage: dict[str, int] = {}
     rejected_samples: list[RejectedNewsSample] = []
+    accepted_urls = {article.url for article in enriched}
 
     for candidate in candidates:
-        if candidate.topic_label is None:
+        if candidate.topic_label is None and candidate.url not in accepted_urls:
             append_rejected_sample(
                 rejected_samples,
                 title=candidate.title,
