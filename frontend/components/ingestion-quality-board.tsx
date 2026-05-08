@@ -10,10 +10,18 @@ type ParsedQaSummary = {
   fetched_count?: number;
   macro_candidate_count?: number;
   missing_topic_count?: number;
+  rejected_samples?: RejectedNewsSample[];
   rejected_count?: number;
   short_content_count?: number;
   topic_coverage?: Record<string, number>;
   validated_rows?: number;
+};
+
+type RejectedNewsSample = {
+  title: string;
+  source: string;
+  url?: string | null;
+  rejection_reason: string;
 };
 
 function parseQaSummary(value: string | null): ParsedQaSummary | null {
@@ -83,6 +91,7 @@ export function IngestionQualityBoard({ runs }: IngestionQualityBoardProps) {
         {runs.map((run) => {
           const qaSummary = parseQaSummary(run.qa_summary);
           const topicCoverage = Object.entries(qaSummary?.topic_coverage ?? {});
+          const rejectedSamples = qaSummary?.rejected_samples ?? [];
 
           return (
             <article key={run.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -145,6 +154,34 @@ export function IngestionQualityBoard({ runs }: IngestionQualityBoardProps) {
                   {qaSummary.validated_rows !== undefined ? (
                     <span>Validated rows: {qaSummary.validated_rows}</span>
                   ) : null}
+                </div>
+              ) : null}
+
+              {rejectedSamples.length > 0 ? (
+                <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
+                    Sample Rejected Headlines
+                  </p>
+                  <div className="mt-3 grid gap-3">
+                    {rejectedSamples.map((sample, index) => (
+                      <article key={`${run.id}-rejected-${index}`} className="text-sm text-neutral-300">
+                        <p className="font-medium text-neutral-200">{sample.title}</p>
+                        <p className="mt-1 text-xs uppercase tracking-[0.14em] text-neutral-500">
+                          {sample.source} · {sample.rejection_reason}
+                        </p>
+                        {sample.url ? (
+                          <a
+                            className="mt-1 inline-block text-xs text-accent underline-offset-4 hover:underline"
+                            href={sample.url}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            View source
+                          </a>
+                        ) : null}
+                      </article>
+                    ))}
+                  </div>
                 </div>
               ) : null}
 

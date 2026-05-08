@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 import pytest
+import json
 
 from app.db.base import Base
 from app.services.news_sources import (
@@ -107,6 +108,45 @@ def test_validate_news_articles_reports_rejections() -> None:
     assert report.missing_topic_count == 1
     assert report.duplicate_url_count == 1
     assert report.accepted_count == 1
+    assert report.rejected_samples == [
+        {
+            "title": "Music concert sells out",
+            "source": "vanguard",
+            "url": "https://example.com/b",
+            "rejection_reason": "missing_topic_label",
+        },
+        {
+            "title": "CBN says naira pressure is easing",
+            "source": "vanguard",
+            "url": "https://example.com/a",
+            "rejection_reason": "duplicate_url",
+        },
+    ]
+
+
+def test_validate_news_articles_caps_rejected_samples() -> None:
+    candidates = [
+        NewsSource(source="punch", feed_url="https://example.com/feed"),
+    ]
+    feed_xml = """<?xml version="1.0"?>
+    <rss><channel>
+      <item><title>Entertainment headline 1</title><link>https://example.com/1</link><description>Guests arrived early.</description></item>
+      <item><title>Entertainment headline 2</title><link>https://example.com/2</link><description>Guests arrived early.</description></item>
+      <item><title>Entertainment headline 3</title><link>https://example.com/3</link><description>Guests arrived early.</description></item>
+      <item><title>Entertainment headline 4</title><link>https://example.com/4</link><description>Guests arrived early.</description></item>
+      <item><title>Entertainment headline 5</title><link>https://example.com/5</link><description>Guests arrived early.</description></item>
+      <item><title>Entertainment headline 6</title><link>https://example.com/6</link><description>Guests arrived early.</description></item>
+      <item><title>Entertainment headline 7</title><link>https://example.com/7</link><description>Guests arrived early.</description></item>
+    </channel></rss>
+    """
+
+    parsed = parse_feed_candidates(candidates[0], feed_xml)
+    accepted, report = validate_news_articles(parsed, fetch_pages=False)
+
+    assert accepted == []
+    assert report.missing_topic_count == 7
+    assert len(report.rejected_samples) == 5
+    assert all(sample["rejection_reason"] == "missing_topic_label" for sample in report.rejected_samples)
 
 
 def test_news_source_ingestion_records_run_and_duplicates(monkeypatch) -> None:
@@ -140,5 +180,49 @@ def test_news_source_ingestion_records_run_and_duplicates(monkeypatch) -> None:
     assert second_result.ingested_count == 0
     assert second_result.duplicate_count == 1
     assert first_result.qa_summary is not None
+    qa_summary = json.loads(first_result.qa_summary)
+    assert qa_summary["rejected_samples"] == []
     assert raw_count == 1
     assert run_count == 2
+
+
+def test_news_source_ingestion_records_rejected_samples(monkeypatch) -> None:
+    feed_xml = """<?xml version="1.0"?>
+    <rss><channel>
+      <item>
+        <title>Food inflation puts pressure on households</title>
+        <link>https://example.com/food-story</link>
+        <description>Rice and food prices remain elevated.</description>
+      </item>
+      <item>
+        <title>Entertainment event thrills fans</title>
+        <link>https://example.com/entertainment-story</link>
+        <description>Guests arrived early.</description>
+      </item>
+    </channel></rss>
+    """
+
+    def fake_fetch_url(url: str) -> str:
+        return feed_xml
+
+    monkeypatch.setattr("app.services.news_sources.fetch_url", fake_fetch_url)
+
+    engine = create_engine("sqlite:///:memory:", future=True)
+    Base.metadata.create_all(bind=engine)
+    source = NewsSource(source="punch", feed_url="https://example.com/feed")
+
+    with Session(engine) as session:
+        result = ingest_news_source(session, source, fetch_pages=False)
+
+    qa_summary = json.loads(result.qa_summary or "{}")
+
+    assert result.rejected_count == 1
+    assert qa_summary["missing_topic_count"] == 1
+    assert qa_summary["rejected_samples"] == [
+        {
+            "title": "Entertainment event thrills fans",
+            "source": "punch",
+            "url": "https://example.com/entertainment-story",
+            "rejection_reason": "missing_topic_label",
+        }
+    ]

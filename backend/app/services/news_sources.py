@@ -28,6 +28,7 @@ REQUEST_TIMEOUT_SECONDS = 20
 USER_AGENT = "NaijaMacroSentimentTracker/0.1 (+local research project)"
 MAX_ARTICLE_CHARS = 8000
 MIN_CONTENT_LENGTH = 80
+MAX_REJECTED_SAMPLES = 5
 
 TOPIC_KEYWORDS = {
     "FX Rate": (
@@ -194,6 +195,15 @@ class NewsQualityReport:
     short_content_count: int
     missing_topic_count: int
     topic_coverage: dict[str, int]
+    rejected_samples: list[dict[str, str]]
+
+
+@dataclass(frozen=True, slots=True)
+class RejectedNewsSample:
+    title: str
+    source: str
+    url: str | None
+    rejection_reason: str
 
 
 class ParagraphExtractor(HTMLParser):
@@ -235,6 +245,31 @@ def classify_macro_topic(text: str) -> str | None:
         if any(re.search(rf"\b{re.escape(keyword)}\b", haystack) for keyword in keywords):
             return topic
     return None
+
+
+def append_rejected_sample(
+    samples: list[RejectedNewsSample],
+    *,
+    title: str,
+    source: str,
+    url: str | None,
+    rejection_reason: str,
+) -> None:
+    if len(samples) >= MAX_REJECTED_SAMPLES:
+        return
+
+    normalized_title = normalize_whitespace(title)
+    if not normalized_title:
+        return
+
+    samples.append(
+        RejectedNewsSample(
+            title=normalized_title,
+            source=source,
+            url=url,
+            rejection_reason=rejection_reason,
+        )
+    )
 
 
 def fetch_url(url: str) -> str:
@@ -344,15 +379,40 @@ def validate_news_articles(
     duplicate_url_count = 0
     short_content_count = 0
     topic_coverage: dict[str, int] = {}
+    rejected_samples: list[RejectedNewsSample] = []
+
+    for candidate in candidates:
+        if candidate.topic_label is None:
+            append_rejected_sample(
+                rejected_samples,
+                title=candidate.title,
+                source=candidate.source,
+                url=candidate.url or None,
+                rejection_reason="missing_topic_label",
+            )
 
     for article in enriched:
         if article.url in seen_urls:
             duplicate_url_count += 1
+            append_rejected_sample(
+                rejected_samples,
+                title=article.title,
+                source=article.source,
+                url=article.url,
+                rejection_reason="duplicate_url",
+            )
             continue
         seen_urls.add(article.url)
 
         if len(article.content) < MIN_CONTENT_LENGTH:
             short_content_count += 1
+            append_rejected_sample(
+                rejected_samples,
+                title=article.title,
+                source=article.source,
+                url=article.url,
+                rejection_reason="short_content",
+            )
             continue
 
         topic_coverage[article.topic_label] = topic_coverage.get(article.topic_label, 0) + 1
@@ -368,6 +428,7 @@ def validate_news_articles(
         short_content_count=short_content_count,
         missing_topic_count=sum(1 for candidate in candidates if candidate.topic_label is None),
         topic_coverage=topic_coverage,
+        rejected_samples=[asdict(sample) for sample in rejected_samples],
     )
     return accepted, report
 
