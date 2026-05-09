@@ -2,11 +2,22 @@
 
 This file records the main Azure deployment issues encountered during Week 9, what each issue meant, and how it was resolved.
 
-## Current Status
+## Final Week 9 Outcome
 
-- Frontend deployment is live on Azure Static Web Apps.
-- Backend GitHub Actions deployment is now succeeding after Azure identity and access fixes.
-- Further hosted runtime validation should continue from this point.
+Week 9 cloud validation is complete.
+
+Confirmed working at the end of Week 9:
+
+- frontend deployment on Azure Static Web Apps
+- backend deployment on Azure App Service
+- Azure PostgreSQL connectivity
+- Alembic migrations in the hosted environment
+- manual X ingestion in Azure
+- Vanguard and Punch news ingestion in Azure
+- Azure AI Language sentiment analysis in Azure
+- frontend runtime fetching against the hosted backend
+- backend CORS configuration for the hosted frontend
+- operations-page ingestion QA visibility
 
 ## Key Issues Faced
 
@@ -17,7 +28,7 @@ What happened:
 - This repository is a monorepo, and the Next.js app lives under `frontend/`.
 
 Impact:
-- The generated workflow shape was not aligned with the actual frontend location.
+- The generated workflow was not aligned with the actual frontend location.
 
 Resolution:
 - Updated the Azure Static Web Apps workflow to build from `frontend/`.
@@ -66,7 +77,7 @@ Impact:
 - The backend deployment workflow stopped before reaching Azure deployment.
 
 Resolution:
-- Replaced the hardcoded machine-specific path assertion with a backend-root-relative assertion that works across environments.
+- Replaced the machine-specific path assertion with a backend-root-relative assertion that works across environments.
 
 ### 5. Azure login failed with `No subscriptions found`
 
@@ -74,10 +85,6 @@ What happened:
 - GitHub OIDC was correctly reaching Azure.
 - The app registration and federated credential were valid.
 - However, the service principal used by GitHub Actions had no Azure role assignments.
-
-Evidence:
-- `az ad sp show --id <AZURE_CLIENT_ID>` returned the expected service principal.
-- `az role assignment list --assignee <AZURE_CLIENT_ID> --all -o table` returned no rows.
 
 Impact:
 - `azure/login@v2` could not access the target subscription.
@@ -87,19 +94,44 @@ Resolution:
 - Assigned Azure RBAC permissions to the correct GitHub Actions service principal.
 - After the role assignment issue was fixed, the backend deployment workflow succeeded.
 
+### 6. Static frontend deployment served stale zero-state data
+
+What happened:
+- The frontend initially relied on server/build-time data fetching, but the deployed app was hosted on Azure Static Web Apps Free.
+
+Impact:
+- The deployed frontend rendered stale empty-state HTML even when the backend contained real data.
+
+Resolution:
+- Moved the dashboard pages to runtime client-side fetching.
+- Fixed `NEXT_PUBLIC_API_BASE_URL` injection in the frontend deployment workflow.
+
+### 7. Hosted frontend calls were blocked by CORS until the frontend origin was aligned
+
+What happened:
+- The backend did not initially return the correct `Access-Control-Allow-Origin` header for the deployed frontend.
+
+Impact:
+- Hosted frontend requests to the backend failed in the browser.
+
+Resolution:
+- Set `FRONTEND_ORIGIN` in Azure App Service to the deployed frontend origin.
+- Restarted the backend so FastAPI CORS middleware picked up the hosted origin.
+
 ## Practical Lessons
 
-- Confirm Azure role assignments with CLI instead of assuming the portal view is showing the correct principal.
-- Avoid machine-specific absolute paths in tests that run in CI.
-- Generated Azure workflows for monorepos usually need review before first use.
-- Public project documentation should surface the live frontend, but should not unnecessarily expose internal backend service endpoints.
+- Generated Azure workflows for monorepos should always be reviewed before first use.
+- GitHub OIDC setup is not complete until the service principal has the correct Azure RBAC assignment.
+- Azure Static Web Apps Free should be treated as a static hosting target, not a guaranteed hybrid SSR runtime.
+- Runtime environment values for frontend builds must be validated in the deployed browser, not just in workflow YAML.
+- Public repo docs should explain deployment at a high level without exposing sensitive operational details.
 
-## Next Validation Work
+## Follow-On Work After Week 9
 
-- Verify hosted backend routes respond successfully.
-- Verify frontend-to-backend connectivity with real deployed API responses.
-- Run explicit cloud checks for:
-  - `/api/health`
-  - `/api/sentiment/summary`
-  - `/operations`
-- Confirm whether any hosted admin actions should remain blocked until authentication is completed.
+After cloud validation, the next areas of improvement are:
+
+- news-topic taxonomy quality
+- rejected-news QA visibility
+- article-page fetch reliability for hosted sources
+- opinion-mining yield on hosted news content
+- safe automation of the full hosted ingestion pipeline
