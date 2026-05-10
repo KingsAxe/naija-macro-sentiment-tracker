@@ -1,4 +1,4 @@
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 import pytest
@@ -6,6 +6,7 @@ import json
 
 from app.db.base import Base
 from app.services.news_sources import (
+    build_request_headers,
     NewsSource,
     classify_macro_topic,
     extract_article_text,
@@ -56,6 +57,20 @@ def test_article_extraction_and_topic_classification() -> None:
 
     assert "Petrol prices" in text
     assert classify_macro_topic(text) == "Fuel Price"
+
+
+def test_build_request_headers_uses_browser_like_defaults_and_source_overrides() -> None:
+    headers = build_request_headers(source="vanguard")
+
+    assert "Mozilla/5.0" in headers["User-Agent"]
+    assert headers["Accept-Language"] == "en-US,en;q=0.9"
+    assert headers["Referer"] == "https://www.vanguardngr.com/category/business/"
+
+
+def test_build_request_headers_uses_feed_accept_header_for_feed_requests() -> None:
+    headers = build_request_headers(source="punch", is_feed=True)
+
+    assert headers["Accept"].startswith("application/rss+xml")
 
 
 @pytest.mark.parametrize(
@@ -139,8 +154,10 @@ def test_validate_news_articles_reclassifies_unmatched_item_with_page_text(monke
     </channel></rss>
     """
 
-    def fake_fetch_url(url: str) -> str:
+    def fake_fetch_url(url: str, *, source: str | None = None, is_feed: bool = False) -> str:
         assert url == "https://example.com/energy-story"
+        assert source == "vanguard"
+        assert is_feed is False
         return """
         <html><body>
           <p>Electricity tariff changes continue to pressure the power sector and energy-intensive factories.</p>
@@ -156,6 +173,9 @@ def test_validate_news_articles_reclassifies_unmatched_item_with_page_text(monke
     assert accepted[0].topic_label == "Power/Energy"
     assert report.missing_topic_count == 1
     assert report.accepted_count == 1
+    assert report.page_fetch_success_count == 1
+    assert report.page_fetch_forbidden_count == 0
+    assert report.page_fetch_error_count == 0
     assert report.rejected_samples == []
 
 
@@ -173,7 +193,7 @@ def test_validate_news_articles_preserves_safe_fallback_when_page_fetch_fails(mo
     </channel></rss>
     """
 
-    def failing_fetch_url(url: str) -> str:
+    def failing_fetch_url(url: str, *, source: str | None = None, is_feed: bool = False) -> str:
         raise URLError("network unavailable")
 
     monkeypatch.setattr("app.services.news_sources.fetch_url", failing_fetch_url)
@@ -183,11 +203,51 @@ def test_validate_news_articles_preserves_safe_fallback_when_page_fetch_fails(mo
 
     assert accepted == []
     assert report.missing_topic_count == 1
+    assert report.page_fetch_success_count == 0
+    assert report.page_fetch_forbidden_count == 0
+    assert report.page_fetch_error_count == 1
     assert report.rejected_samples == [
         {
             "title": "Business desk update",
             "source": "punch",
             "url": "https://example.com/unmatched-story",
+            "rejection_reason": "missing_topic_label",
+        }
+    ]
+
+
+def test_validate_news_articles_records_forbidden_fetch_outcome_and_preserves_fallback(monkeypatch) -> None:
+    candidates = [
+        NewsSource(source="vanguard", feed_url="https://example.com/feed"),
+    ]
+    feed_xml = """<?xml version="1.0"?>
+    <rss><channel>
+      <item>
+        <title>Business desk update</title>
+        <link>https://example.com/blocked-story</link>
+        <description>Markets are watching incoming data.</description>
+      </item>
+    </channel></rss>
+    """
+
+    def forbidden_fetch_url(url: str, *, source: str | None = None, is_feed: bool = False) -> str:
+        raise HTTPError(url, 403, "Forbidden", hdrs=None, fp=None)
+
+    monkeypatch.setattr("app.services.news_sources.fetch_url", forbidden_fetch_url)
+
+    parsed = parse_feed_candidates(candidates[0], feed_xml)
+    accepted, report = validate_news_articles(parsed, fetch_pages=True)
+
+    assert accepted == []
+    assert report.missing_topic_count == 1
+    assert report.page_fetch_success_count == 0
+    assert report.page_fetch_forbidden_count == 1
+    assert report.page_fetch_error_count == 0
+    assert report.rejected_samples == [
+        {
+            "title": "Business desk update",
+            "source": "vanguard",
+            "url": "https://example.com/blocked-story",
             "rejection_reason": "missing_topic_label",
         }
     ]
@@ -230,7 +290,7 @@ def test_news_source_ingestion_records_run_and_duplicates(monkeypatch) -> None:
     </channel></rss>
     """
 
-    def fake_fetch_url(url: str) -> str:
+    def fake_fetch_url(url: str, *, source: str | None = None, is_feed: bool = False) -> str:
         return feed_xml
 
     monkeypatch.setattr("app.services.news_sources.fetch_url", fake_fetch_url)
@@ -251,6 +311,7 @@ def test_news_source_ingestion_records_run_and_duplicates(monkeypatch) -> None:
     assert first_result.qa_summary is not None
     qa_summary = json.loads(first_result.qa_summary)
     assert qa_summary["rejected_samples"] == []
+    assert qa_summary["page_fetch_forbidden_count"] == 0
     assert raw_count == 1
     assert run_count == 2
 
@@ -271,7 +332,7 @@ def test_news_source_ingestion_records_rejected_samples(monkeypatch) -> None:
     </channel></rss>
     """
 
-    def fake_fetch_url(url: str) -> str:
+    def fake_fetch_url(url: str, *, source: str | None = None, is_feed: bool = False) -> str:
         return feed_xml
 
     monkeypatch.setattr("app.services.news_sources.fetch_url", fake_fetch_url)
