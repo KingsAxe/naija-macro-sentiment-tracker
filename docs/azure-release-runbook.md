@@ -17,7 +17,7 @@ This runbook defines the first recommended release flow for Azure deployment.
 - [ ] Add GitHub variable `AZURE_BACKEND_APP_NAME`
 
 ### 3. Configure Backend App Settings
-- [ ] Apply values from [production-env-checklist.md](C:/Users/pc/Desktop/Pro_Jets/naija-sentiment-tracker/docs/production-env-checklist.md)
+- [ ] Apply values from [production-env-checklist.md](production-env-checklist.md)
 - [ ] Keep `AUTO_CREATE_SCHEMA_ON_STARTUP=false`
 - [ ] Keep `SCHEDULER_ENABLED=false`
 - [ ] Point `DATABASE_URL` to Azure PostgreSQL
@@ -72,6 +72,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 - [ ] Verify Azure AI results persist correctly
 - [ ] Verify public pages remain readable without sign-in
 - [ ] Verify admin actions are not publicly available
+- [ ] Run `python scripts/hosted_etl_validation.py --api-base-url https://<backend-app>.azurewebsites.net/api` for a repeatable hosted validation snapshot
 
 ### 10. After First Successful Release
 - [ ] Decide whether scheduler execution should stay in the API temporarily or move to an Azure-native job
