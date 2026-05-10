@@ -8,7 +8,7 @@ from datetime import datetime
 from email.utils import parsedate_to_datetime
 from html import unescape
 from html.parser import HTMLParser
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree
 
@@ -25,7 +25,25 @@ from app.services.ingestion import (
 )
 
 REQUEST_TIMEOUT_SECONDS = 20
-USER_AGENT = "NaijaMacroSentimentTracker/0.1 (+local research project)"
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
+)
+DEFAULT_REQUEST_HEADERS = {
+    "User-Agent": DEFAULT_USER_AGENT,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Cache-Control": "no-cache",
+    "Pragma": "no-cache",
+}
+SOURCE_PAGE_REQUEST_HEADERS = {
+    "vanguard": {
+        "Referer": "https://www.vanguardngr.com/category/business/",
+    },
+    "punch": {
+        "Referer": "https://punchng.com/topics/business/",
+    },
+}
 MAX_ARTICLE_CHARS = 8000
 MIN_CONTENT_LENGTH = 80
 MAX_REJECTED_SAMPLES = 5
@@ -194,6 +212,9 @@ class NewsQualityReport:
     duplicate_url_count: int
     short_content_count: int
     missing_topic_count: int
+    page_fetch_success_count: int
+    page_fetch_forbidden_count: int
+    page_fetch_error_count: int
     topic_coverage: dict[str, int]
     rejected_samples: list[dict[str, str]]
 
@@ -204,6 +225,22 @@ class RejectedNewsSample:
     source: str
     url: str | None
     rejection_reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class PageFetchMetrics:
+    success_count: int = 0
+    forbidden_count: int = 0
+    error_count: int = 0
+
+
+def build_request_headers(*, source: str | None = None, is_feed: bool = False) -> dict[str, str]:
+    headers = dict(DEFAULT_REQUEST_HEADERS)
+    if is_feed:
+        headers["Accept"] = "application/rss+xml,application/xml;q=0.9,text/xml;q=0.8,*/*;q=0.7"
+    if source:
+        headers.update(SOURCE_PAGE_REQUEST_HEADERS.get(source, {}))
+    return headers
 
 
 class ParagraphExtractor(HTMLParser):
@@ -272,8 +309,8 @@ def append_rejected_sample(
     )
 
 
-def fetch_url(url: str) -> str:
-    request = Request(url, headers={"User-Agent": USER_AGENT})
+def fetch_url(url: str, *, source: str | None = None, is_feed: bool = False) -> str:
+    request = Request(url, headers=build_request_headers(source=source, is_feed=is_feed))
     with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
         return response.read().decode("utf-8", errors="replace")
 
@@ -328,8 +365,11 @@ def enrich_candidates_with_page_text(
     *,
     fetch_pages: bool,
     logger: logging.Logger | None = None,
-) -> list[NewsArticle]:
+) -> tuple[list[NewsArticle], PageFetchMetrics]:
     articles: list[NewsArticle] = []
+    page_fetch_success_count = 0
+    page_fetch_forbidden_count = 0
+    page_fetch_error_count = 0
     for candidate in candidates:
         base_content = normalize_whitespace(f"{candidate.title}. {candidate.summary}")
         content = base_content
@@ -337,8 +377,31 @@ def enrich_candidates_with_page_text(
 
         if fetch_pages:
             try:
-                page_text = extract_article_text(fetch_url(candidate.url))
+                page_text = extract_article_text(fetch_url(candidate.url, source=candidate.source))
+                if page_text:
+                    page_fetch_success_count += 1
+            except HTTPError as exc:
+                if exc.code == 403:
+                    page_fetch_forbidden_count += 1
+                    if logger:
+                        logger.warning(
+                            "Article fetch forbidden | source=%s | url=%s | error=%s",
+                            candidate.source,
+                            candidate.url,
+                            exc,
+                        )
+                else:
+                    page_fetch_error_count += 1
+                    if logger:
+                        logger.warning(
+                            "Article fetch failed | source=%s | url=%s | error=%s",
+                            candidate.source,
+                            candidate.url,
+                            exc,
+                        )
+                page_text = ""
             except (URLError, TimeoutError, OSError, ValueError) as exc:
+                page_fetch_error_count += 1
                 if logger:
                     logger.warning(
                         "Article fetch failed | source=%s | url=%s | error=%s",
@@ -367,7 +430,14 @@ def enrich_candidates_with_page_text(
             )
         )
 
-    return articles
+    return (
+        articles,
+        PageFetchMetrics(
+            success_count=page_fetch_success_count,
+            forbidden_count=page_fetch_forbidden_count,
+            error_count=page_fetch_error_count,
+        ),
+    )
 
 
 def validate_news_articles(
@@ -376,7 +446,11 @@ def validate_news_articles(
     fetch_pages: bool,
     logger: logging.Logger | None = None,
 ) -> tuple[list[NewsArticle], NewsQualityReport]:
-    enriched = enrich_candidates_with_page_text(candidates, fetch_pages=fetch_pages, logger=logger)
+    enriched, page_fetch_metrics = enrich_candidates_with_page_text(
+        candidates,
+        fetch_pages=fetch_pages,
+        logger=logger,
+    )
     accepted: list[NewsArticle] = []
     seen_urls: set[str] = set()
     duplicate_url_count = 0
@@ -431,6 +505,9 @@ def validate_news_articles(
         duplicate_url_count=duplicate_url_count,
         short_content_count=short_content_count,
         missing_topic_count=sum(1 for candidate in candidates if candidate.topic_label is None),
+        page_fetch_success_count=page_fetch_metrics.success_count,
+        page_fetch_forbidden_count=page_fetch_metrics.forbidden_count,
+        page_fetch_error_count=page_fetch_metrics.error_count,
         topic_coverage=topic_coverage,
         rejected_samples=[asdict(sample) for sample in rejected_samples],
     )
@@ -462,7 +539,10 @@ def ingest_news_source(
 ) -> IngestionRunResult:
     run = _create_ingestion_run(session=session, source_type="news_feed", source_file=source.feed_url)
     try:
-        candidates = parse_feed_candidates(source, fetch_url(source.feed_url))[:limit]
+        candidates = parse_feed_candidates(
+            source,
+            fetch_url(source.feed_url, source=source.source, is_feed=True),
+        )[:limit]
         articles, report = validate_news_articles(candidates, fetch_pages=fetch_pages, logger=logger)
         cleaned = articles_to_dataframe(articles)
         ingested_count, skipped_count = bulk_insert_clean_records(session=session, cleaned=cleaned)
