@@ -73,6 +73,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 - [ ] Verify public pages remain readable without sign-in
 - [ ] Verify admin actions are not publicly available
 - [ ] Run `python scripts/hosted_etl_validation.py --api-base-url https://<backend-app>.azurewebsites.net/api` for a repeatable hosted validation snapshot
+- [ ] Prefer `.\scripts\validate_hosted.ps1` from the repo root for the default hosted validation shortcut
 
 ### 10. After First Successful Release
 - [ ] Decide whether scheduler execution should stay in the API temporarily or move to an Azure-native job
