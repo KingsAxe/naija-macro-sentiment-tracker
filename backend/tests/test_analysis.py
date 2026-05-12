@@ -1,5 +1,8 @@
 from dataclasses import dataclass
+import shutil
+from contextlib import contextmanager
 from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -7,6 +10,20 @@ from sqlalchemy.orm import sessionmaker
 from app.db.base import Base
 from app.models import RawText
 from app.services.analysis import analyze_pending_sentiments
+from app.services.ingestion import BACKEND_ROOT
+
+TEST_TMP_ROOT = BACKEND_ROOT / "tests_tmp"
+
+
+@contextmanager
+def make_workspace_temp_dir() -> Path:
+    TEST_TMP_ROOT.mkdir(exist_ok=True)
+    path = TEST_TMP_ROOT / uuid4().hex
+    path.mkdir()
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
 
 
 @dataclass
@@ -74,38 +91,46 @@ class FakeSentimentClient:
         ]
 
 
-def test_analyze_pending_sentiments_persists_sentiment_and_targets(tmp_path: Path) -> None:
-    database_path = tmp_path / "analysis.db"
-    engine = create_engine(
-        f"sqlite:///{database_path}",
-        future=True,
-        connect_args={"check_same_thread": False},
-    )
-    SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
-    Base.metadata.create_all(bind=engine)
-
-    with SessionLocal() as session:
-        session.add_all(
-            [
-                RawText(source="x", topic_label="Fuel Price", content="Fuel prices are too high"),
-                RawText(source="x", topic_label="FX Rate", content="The naira looks stable today"),
-            ]
+def test_analyze_pending_sentiments_persists_sentiment_and_targets() -> None:
+    with make_workspace_temp_dir() as tmp_dir:
+        database_path = tmp_dir / "analysis.db"
+        engine = create_engine(
+            f"sqlite:///{database_path}",
+            future=True,
+            connect_args={"check_same_thread": False},
         )
-        session.commit()
+        SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+        Base.metadata.create_all(bind=engine)
 
-    with SessionLocal() as session:
-        result = analyze_pending_sentiments(session=session, client=FakeSentimentClient())
-        sentiment_count = session.execute(text("select count(*) from analyzed_sentiments")).scalar_one()
-        target_count = session.execute(text("select count(*) from opinion_targets")).scalar_one()
-        assessment_count = session.execute(text("select count(*) from opinion_assessments")).scalar_one()
-        synthetic_targets = session.execute(
-            text("select count(*) from opinion_targets where target_name like '%: %'")
-        ).scalar_one()
+        with SessionLocal() as session:
+            session.add_all(
+                [
+                    RawText(source="x", topic_label="Fuel Price", content="Fuel prices are too high"),
+                    RawText(source="x", topic_label="FX Rate", content="The naira looks stable today"),
+                ]
+            )
+            session.commit()
+
+        with SessionLocal() as session:
+            result = analyze_pending_sentiments(session=session, client=FakeSentimentClient())
+            sentiment_count = session.execute(text("select count(*) from analyzed_sentiments")).scalar_one()
+            target_count = session.execute(text("select count(*) from opinion_targets")).scalar_one()
+            assessment_count = session.execute(text("select count(*) from opinion_assessments")).scalar_one()
+            synthetic_targets = session.execute(
+                text("select count(*) from opinion_targets where target_name like '%: %'")
+            ).scalar_one()
 
     assert result.analyzed_count == 2
     assert result.target_count == 1
     assert result.assessment_count == 1
     assert result.skipped_count == 0
+    assert result.source_breakdown == {
+        "x": {
+            "analyzed_count": 2,
+            "target_count": 1,
+            "assessment_count": 1,
+        }
+    }
     assert sentiment_count == 2
     assert target_count == 1
     assert assessment_count == 1
