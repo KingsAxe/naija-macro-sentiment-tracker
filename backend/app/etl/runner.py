@@ -108,6 +108,14 @@ def main() -> int:
             analysis_result.assessment_count,
             analysis_result.skipped_count,
         )
+        for source_name, metrics in sorted(analysis_result.source_breakdown.items()):
+            logger.info(
+                "Analysis source summary | source=%s | analyzed=%s | targets=%s | assessments=%s",
+                source_name,
+                metrics["analyzed_count"],
+                metrics["target_count"],
+                metrics["assessment_count"],
+            )
         return 0
     except Exception:
         logger.exception("Ingestion run failed")

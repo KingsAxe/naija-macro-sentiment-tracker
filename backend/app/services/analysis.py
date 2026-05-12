@@ -26,6 +26,7 @@ class AnalysisRunResult:
     target_count: int
     assessment_count: int
     skipped_count: int
+    source_breakdown: dict[str, dict[str, int]]
 
 
 def azure_language_is_configured() -> bool:
@@ -88,6 +89,7 @@ def analyze_pending_sentiments(
             target_count=0,
             assessment_count=0,
             skipped_count=0,
+            source_breakdown={},
         )
 
     active_client = client or build_text_analytics_client()
@@ -97,6 +99,7 @@ def analyze_pending_sentiments(
     target_count = 0
     assessment_count = 0
     skipped_count = 0
+    source_breakdown: dict[str, dict[str, int]] = {}
 
     for batch_index, batch in enumerate(batches, start=1):
         documents = [
@@ -161,6 +164,17 @@ def analyze_pending_sentiments(
 
             target_count += opinions_added
             assessment_count += assessments_added
+            source_metrics = source_breakdown.setdefault(
+                item.source,
+                {
+                    "analyzed_count": 0,
+                    "target_count": 0,
+                    "assessment_count": 0,
+                },
+            )
+            source_metrics["analyzed_count"] += 1
+            source_metrics["target_count"] += opinions_added
+            source_metrics["assessment_count"] += assessments_added
 
         session.commit()
         if batch_index < len(batches):
@@ -171,4 +185,5 @@ def analyze_pending_sentiments(
         target_count=target_count,
         assessment_count=assessment_count,
         skipped_count=skipped_count,
+        source_breakdown=source_breakdown,
     )

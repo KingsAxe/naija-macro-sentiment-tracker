@@ -151,9 +151,11 @@ Week 10 is complete. The project now has broader news-topic coverage and better 
 ### Scope Completed
 - Added a second-pass topic classification path that retries unmatched news items using fetched article page text.
 - Preserved safe fallback behavior when page fetches fail.
+- Added fetch-outcome tracking so hosted validation can distinguish successful article fetches from blocked or failed page requests.
 
 ### Current Observation
-- The reclassification logic works, but Vanguard article-page fetches can return `403 Forbidden` in Azure, limiting the practical benefit for that source.
+- Punch article-page fetching works in Azure and can provide richer text for downstream analysis.
+- Vanguard article-page fetching can return `403 Forbidden` in Azure, so Vanguard often falls back to RSS summary input and may produce lower opinion-mining yield than Punch.
 
 ### Outcome
 Week 11 is in progress. The reclassification path exists, and the next improvement area is article-page fetch reliability for hosted news sources.

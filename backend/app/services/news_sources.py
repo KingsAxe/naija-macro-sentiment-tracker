@@ -47,6 +47,12 @@ SOURCE_PAGE_REQUEST_HEADERS = {
 MAX_ARTICLE_CHARS = 8000
 MIN_CONTENT_LENGTH = 80
 MAX_REJECTED_SAMPLES = 5
+LOW_SIGNAL_ARTICLE_PHRASES = (
+    "advertisement",
+    "read also",
+    "kindly share this story",
+    "watch video",
+)
 
 TOPIC_KEYWORDS = {
     "FX Rate": (
@@ -309,6 +315,50 @@ def append_rejected_sample(
     )
 
 
+def clean_article_paragraphs(paragraphs: list[str]) -> list[str]:
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for paragraph in paragraphs:
+        normalized = normalize_whitespace(paragraph)
+        if not normalized:
+            continue
+        lowered = normalized.casefold()
+        if any(phrase in lowered for phrase in LOW_SIGNAL_ARTICLE_PHRASES):
+            continue
+        if lowered in seen:
+            continue
+        seen.add(lowered)
+        cleaned.append(normalized)
+    return cleaned
+
+
+def _append_unique_segment(segments: list[str], segment: str) -> None:
+    normalized = normalize_whitespace(segment)
+    if not normalized:
+        return
+
+    lowered = normalized.casefold()
+    for existing in segments:
+        existing_lowered = existing.casefold()
+        if lowered == existing_lowered or lowered in existing_lowered or existing_lowered in lowered:
+            return
+
+    segments.append(normalized)
+
+
+def prepare_analysis_content(*, title: str, summary: str, article_paragraphs: list[str] | None = None) -> str:
+    segments: list[str] = []
+    _append_unique_segment(segments, title)
+    _append_unique_segment(segments, summary)
+
+    for paragraph in clean_article_paragraphs(article_paragraphs or []):
+        _append_unique_segment(segments, paragraph)
+        if len(" ".join(segments)) >= MAX_ARTICLE_CHARS:
+            break
+
+    return normalize_whitespace(" ".join(segments))[:MAX_ARTICLE_CHARS]
+
+
 def fetch_url(url: str, *, source: str | None = None, is_feed: bool = False) -> str:
     request = Request(url, headers=build_request_headers(source=source, is_feed=is_feed))
     with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
@@ -357,7 +407,7 @@ def parse_feed_candidates(source: NewsSource, feed_xml: str) -> list[NewsArticle
 def extract_article_text(html: str) -> str:
     parser = ParagraphExtractor()
     parser.feed(html)
-    return normalize_whitespace(" ".join(parser.paragraphs))[:MAX_ARTICLE_CHARS]
+    return normalize_whitespace(" ".join(clean_article_paragraphs(parser.paragraphs)))[:MAX_ARTICLE_CHARS]
 
 
 def enrich_candidates_with_page_text(
@@ -371,13 +421,15 @@ def enrich_candidates_with_page_text(
     page_fetch_forbidden_count = 0
     page_fetch_error_count = 0
     for candidate in candidates:
-        base_content = normalize_whitespace(f"{candidate.title}. {candidate.summary}")
-        content = base_content
+        content = prepare_analysis_content(title=candidate.title, summary=candidate.summary)
         topic_label = candidate.topic_label
 
         if fetch_pages:
             try:
-                page_text = extract_article_text(fetch_url(candidate.url, source=candidate.source))
+                parser = ParagraphExtractor()
+                parser.feed(fetch_url(candidate.url, source=candidate.source))
+                article_paragraphs = clean_article_paragraphs(parser.paragraphs)
+                page_text = normalize_whitespace(" ".join(article_paragraphs))[:MAX_ARTICLE_CHARS]
                 if page_text:
                     page_fetch_success_count += 1
             except HTTPError as exc:
@@ -400,6 +452,7 @@ def enrich_candidates_with_page_text(
                             exc,
                         )
                 page_text = ""
+                article_paragraphs = []
             except (URLError, TimeoutError, OSError, ValueError) as exc:
                 page_fetch_error_count += 1
                 if logger:
@@ -410,8 +463,13 @@ def enrich_candidates_with_page_text(
                         exc,
                     )
                 page_text = ""
+                article_paragraphs = []
             if page_text:
-                content = normalize_whitespace(f"{candidate.title}. {page_text}")
+                content = prepare_analysis_content(
+                    title=candidate.title,
+                    summary=candidate.summary,
+                    article_paragraphs=article_paragraphs,
+                )
                 if topic_label is None:
                     topic_label = classify_macro_topic(content)
 

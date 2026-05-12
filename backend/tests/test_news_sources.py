@@ -9,6 +9,7 @@ from app.services.news_sources import (
     build_request_headers,
     NewsSource,
     classify_macro_topic,
+    prepare_analysis_content,
     extract_article_text,
     ingest_news_source,
     parse_feed_candidates,
@@ -71,6 +72,25 @@ def test_build_request_headers_uses_feed_accept_header_for_feed_requests() -> No
     headers = build_request_headers(source="punch", is_feed=True)
 
     assert headers["Accept"].startswith("application/rss+xml")
+
+
+def test_prepare_analysis_content_deduplicates_and_filters_low_signal_paragraphs() -> None:
+    content = prepare_analysis_content(
+        title="Fuel prices jump again",
+        summary="Fuel prices rose sharply after depot adjustments.",
+        article_paragraphs=[
+            "ADVERTISEMENT",
+            "Fuel prices rose sharply after depot adjustments.",
+            "Independent marketers said logistics costs remain elevated across major depots.",
+            "Read also: Market roundup",
+            "Independent marketers said logistics costs remain elevated across major depots.",
+        ],
+    )
+
+    assert "ADVERTISEMENT" not in content
+    assert "Read also" not in content
+    assert content.count("Fuel prices rose sharply after depot adjustments.") == 1
+    assert "Independent marketers said logistics costs remain elevated across major depots." in content
 
 
 @pytest.mark.parametrize(
@@ -177,6 +197,7 @@ def test_validate_news_articles_reclassifies_unmatched_item_with_page_text(monke
     assert report.page_fetch_forbidden_count == 0
     assert report.page_fetch_error_count == 0
     assert report.rejected_samples == []
+    assert "Markets are watching incoming data." in accepted[0].content
 
 
 def test_validate_news_articles_preserves_safe_fallback_when_page_fetch_fails(monkeypatch) -> None:
