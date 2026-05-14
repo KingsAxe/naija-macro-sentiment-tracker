@@ -2,11 +2,13 @@
 
 Naija Macro Sentiment Tracker is a cloud-hosted sentiment intelligence dashboard for public discussion about the Nigerian economy. It combines manual X data ingestion, curated business-news ingestion, Azure AI sentiment analysis, operational QA tracking, and a live web dashboard for analysis and monitoring.
 
+This project is now treated as **MVP complete** for portfolio and showcase purposes. The hosted environment remains useful and demonstrable, but ongoing ingestion and Azure AI analysis are intentionally run in a controlled, cost-aware way rather than as an always-on production workload.
+
 ## Why This Project Matters
 
 Macroeconomic sentiment affects how people interpret inflation, exchange-rate pressure, fuel pricing, public policy, and broader business confidence. In many cases, that discussion is fragmented across social media and news coverage. This project brings those sources into one pipeline so sentiment, topical coverage, and ingestion quality can be reviewed in a more structured way.
 
-This is not presented as a finished commercial product. It is an actively evolving engineering project focused on Nigerian macro discourse, cloud deployment, and operational observability.
+This is not presented as a finished commercial product. It is a production-style portfolio MVP focused on Nigerian macro discourse, cloud deployment, operational observability, and disciplined iteration.
 
 ## Problem Statement
 
@@ -81,6 +83,25 @@ Current hosted frontend:
 - [Live dashboard](https://thankful-beach-07fb02e0f.7.azurestaticapps.net)
 
 If you are sharing this project externally, you may replace the link above with a different public environment later without changing the rest of the documentation.
+
+## MVP Status And Showcase Posture
+
+This repository should currently be read as a hosted MVP with a stable showcase posture.
+
+What that means:
+
+- the end-to-end system works in Azure
+- the dashboard and operations page are demonstrable using the current hosted dataset
+- the hosted PostgreSQL data can be treated as the active demo dataset
+- ingestion and analysis are kept manual and intentional to avoid unnecessary Azure cost
+- the project roadmap continues, but the core portfolio value is already proven
+
+Recommended showcase posture:
+
+- use the existing hosted data as the default demo dataset
+- avoid unnecessary repeat ETL runs
+- keep scheduled ingestion disabled
+- use read-only validation checks before deciding whether a fresh hosted run is necessary
 
 ## Screenshots
 
@@ -187,6 +208,23 @@ NEXT_PUBLIC_API_BASE_URL=https://your-backend-app-name.azurewebsites.net/api
 
 ## Running ETL And Analysis
 
+Hosted ETL should be treated as a **manual validation action**, not a routine operation.
+
+Run hosted ETL when:
+
+- you have merged and deployed a backend change that affects ingestion or analysis
+- you are validating a specific source-quality improvement
+- you need a fresh comparison point for Vanguard or Punch behavior
+
+Avoid hosted ETL when:
+
+- you only need to confirm the backend is reachable
+- you only need to inspect the current hosted dataset
+- you are doing repeated UI or docs work
+- you are not specifically testing ingestion or Azure AI analysis
+
+The cheapest default is to preserve the current hosted dataset and validate it read-only.
+
 Ingest and analyze manual X data:
 
 ```powershell
@@ -215,6 +253,28 @@ cd backend
 ..\nst\Scripts\python.exe -m app.etl.runner --csv-path data/raw_macro_data.csv --include-news --news-limit 20 --skip-news-pages
 ```
 
+## Hosted Validation Helper
+
+Preferred read-only hosted validation from the repo root:
+
+```powershell
+.\scripts\validate_hosted.ps1
+```
+
+Override the hosted backend URL if needed:
+
+```powershell
+.\scripts\validate_hosted.ps1 -ApiBaseUrl https://your-backend-app.azurewebsites.net/api
+```
+
+Request JSON output:
+
+```powershell
+.\scripts\validate_hosted.ps1 -Json
+```
+
+Use the helper before running hosted ETL whenever possible. It checks backend health, recent ingestion runs, feed availability, and current analysis totals without modifying hosted data.
+
 ## Testing And Validation
 
 ### Backend tests
@@ -242,6 +302,8 @@ npm run build
 
 ## Current System Status
 
+MVP-complete capabilities:
+
 Confirmed working:
 
 - Azure backend deployment
@@ -255,23 +317,33 @@ Confirmed working:
 - backend CORS configuration for the hosted frontend
 - operations page ingestion metrics and QA summaries
 
+Current operating posture:
+
+- hosted dashboard is active and presentable
+- hosted data is preserved as demo/showcase data
+- validation is preferred over repeated ingestion
+- scheduled ingestion should remain disabled unless there is a deliberate reason to change posture
+
 ## Known Limitations
 
 - Vanguard article page fetches can return `403 Forbidden` in Azure, which limits page-text enrichment reliability for some news items.
+- Vanguard often falls back to RSS summary input because of page-fetch blocking, so opinion-mining quality can be lower than for Punch.
+- Punch article fetching works better, but repeated validation runs still become duplicate-heavy over time.
 - News taxonomy quality is improving, but still evolving.
 - Rejected-news QA visibility exists, but classification coverage can still be refined further.
 - Opinion-mining yield for hosted news analysis remains lower than desired.
-- Full automation of the hosted ingestion pipeline is not yet the final production posture.
+- Azure AI Language usage is cost-sensitive; repeated hosted ETL runs should be intentional and limited.
+- Full automation of the hosted ingestion pipeline is intentionally paused until cost, source reliability, and operating posture are better defined.
 - Frontend lint is not yet configured for non-interactive CI-style execution in the current repo setup.
 
 ## Roadmap
 
 Current improvement focus:
 
-1. Improve article page fetch reliability for hosted news sources
-2. Improve hosted news opinion-mining yield
-3. Tune scheduled news ingestion defaults for quality over speed
-4. Automate the hosted ingestion and analysis pipeline safely
+1. Document and preserve the current MVP showcase posture
+2. Tune manual operating guidance and cost-aware validation habits
+3. Reassess whether scheduler defaults or further automation are worth the cost
+4. Resume feature development only where the portfolio value clearly outweighs the maintenance burden
 
 ## Additional Documentation
 

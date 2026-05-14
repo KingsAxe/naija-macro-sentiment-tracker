@@ -2,6 +2,13 @@
 
 This runbook defines the first recommended release flow for Azure deployment.
 
+Current posture:
+
+- the hosted system is suitable for portfolio demonstration
+- the current PostgreSQL dataset can be treated as the active demo dataset
+- hosted ETL and Azure AI analysis should stay manual and intentional
+- scheduler-driven ingestion should remain disabled unless a deliberate operational decision is made
+
 ## Ordered Release Checklist
 
 ### 1. Provision Azure Core Services
@@ -75,7 +82,14 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 - [ ] Run `python scripts/hosted_etl_validation.py --api-base-url https://<backend-app>.azurewebsites.net/api` for a repeatable hosted validation snapshot
 - [ ] Prefer `.\scripts\validate_hosted.ps1` from the repo root for the default hosted validation shortcut
 
+### 9a. Use Read-Only Validation Before Running ETL
+- [ ] Run `.\scripts\validate_hosted.ps1` first
+- [ ] Review backend health, recent run metrics, and current analysis totals
+- [ ] Only run hosted ETL if you are validating a specific backend ingestion or analysis change
+- [ ] Avoid repeat ETL runs for routine UI, docs, or presentation work
+
 ### 10. After First Successful Release
-- [ ] Decide whether scheduler execution should stay in the API temporarily or move to an Azure-native job
+- [ ] Preserve the hosted dataset if the dashboard already demonstrates the intended workflow
+- [ ] Reassess Azure AI cost usage before enabling any higher-frequency ingestion pattern
 - [ ] Implement admin authentication before exposing operational controls in the hosted environment
-- [ ] Only then consider enabling hosted scheduler behavior
+- [ ] Only then reconsider scheduler-enabled or more automated hosted operation

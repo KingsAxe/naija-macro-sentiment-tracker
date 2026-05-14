@@ -146,7 +146,7 @@ Week 9 is complete. The hosted backend, hosted frontend, Azure database, Azure A
 ### Outcome
 Week 10 is complete. The project now has broader news-topic coverage and better visibility into classification misses.
 
-## Week 11 Summary: Page-Text Reclassification
+## Week 11 Summary: Page-Text Reclassification And Hosted Validation Hardening
 
 ### Scope Completed
 - Added a second-pass topic classification path that retries unmatched news items using fetched article page text.
@@ -156,13 +156,25 @@ Week 10 is complete. The project now has broader news-topic coverage and better 
 ### Current Observation
 - Punch article-page fetching works in Azure and can provide richer text for downstream analysis.
 - Vanguard article-page fetching can return `403 Forbidden` in Azure, so Vanguard often falls back to RSS summary input and may produce lower opinion-mining yield than Punch.
+- Hosted validation is now easier to repeat through read-only helper commands from the repo root.
 
 ### Outcome
-Week 11 is in progress. The reclassification path exists, and the next improvement area is article-page fetch reliability for hosted news sources.
+Week 11 is complete. The project now has stronger hosted validation, clearer source-specific fetch behavior, and better visibility into ingestion quality and opinion-mining yield.
+
+## Week 12 Summary: MVP Showcase Posture
+
+### Scope Completed
+- Reassessed the project as a portfolio MVP rather than an always-on production workload.
+- Defined a cost-aware hosted operating posture.
+- Preserved the current hosted dataset as the default demo/showcase dataset.
+- Shifted validation guidance toward read-only helper-based checks before any new hosted ETL run.
+
+### Outcome
+Week 12 is complete. The project is now treated as MVP complete, with future work intentionally slowed until the value of additional Azure usage clearly outweighs the cost.
 
 ## Current Project State
 
-The project is currently beyond initial cloud validation and is now focused on improving hosted news quality and reliability.
+The project is currently MVP complete and positioned for sustainable portfolio review.
 
 Confirmed working:
 - Azure backend deployment
@@ -174,12 +186,11 @@ Confirmed working:
 - frontend runtime data fetching
 - operations page ingestion metrics and QA summaries
 
-Currently being improved:
-- article page fetch reliability
-- rejected news QA refinement
-- topic taxonomy quality
-- opinion-mining yield
-- automation of the full hosted ingestion pipeline
+Current operating posture:
+- preserve the existing hosted dataset as demo data
+- prefer read-only validation over repeated hosted ETL runs
+- keep scheduler-driven ingestion disabled
+- continue development only where the engineering or portfolio value is clearly justified
 
 ## Current Milestone Assessment
 
@@ -193,13 +204,14 @@ Currently being improved:
 - Week 8: complete
 - Week 9: complete
 - Week 10: complete
-- Week 11: in progress
+- Week 11: complete
+- Week 12: complete
 
 ## Next Planned Phase
 
 Recommended next backlog order:
 
-1. improve article page fetch reliability for hosted news sources
-2. improve hosted news opinion-mining yield
-3. tune scheduled news ingestion defaults
-4. automate the hosted ingestion and analysis pipeline
+1. maintain and document the MVP showcase posture
+2. only run hosted ETL for targeted backend validation
+3. reassess scheduler defaults before considering automation
+4. resume larger feature work only if the cost and maintenance tradeoff remains acceptable
